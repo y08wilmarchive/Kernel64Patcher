@@ -1,7 +1,16 @@
 # Kernel64Patcher
 A 64 Bit kernel patcher based on xerub's patchfinder64
 
-## Compiling
+## Linux Compiling
+```
+sudo apt update && sudo apt install -y uuid-dev libz-dev git curl
+git clone --recursive https://github.com/charlesnathansmith/maloader-no-sysctl
+cd maloader-no-sysctl
+make release
+cd ..
+gcc Kernel64Patcher.c -o Kernel64Patcher -I./maloader-no-sysctl/include/ -L./maloader-no-sysctl/
+```
+## Mac Compiling 
 ```
 gcc Kernel64Patcher.c -o Kernel64Patcher
 ```
