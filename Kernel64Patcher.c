@@ -12,7 +12,7 @@
 #define GET_OFFSET(kernel_len, x) (x - (uintptr_t) kernel_buf)
 
 // iOS 7 vm_map_protect Patch
-int get_vm_map_protect_patch(void* kernel_buf,size_t kernel_len) {
+int get_vm_map_protect_patch_ios11A24580o(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     char* vMMapProtectString = "!current->use_pmap";
     void* ent_loc = memmem(kernel_buf, kernel_len, vMMapProtectString, sizeof(vMMapProtectString));
@@ -105,7 +105,7 @@ int get_vm_map_protect_patch(void* kernel_buf,size_t kernel_len) {
 }
 
 // iOS 7 vm_map_enter Patch
-int get_vm_map_enter_patch(void* kernel_buf,size_t kernel_len) {
+int get_vm_map_enter_patch_ios11A24580o(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     char* vMMapEnterString = "EMBEDDED: %%s curprot cannot be write+execute. turning off execute\n";
     void* ent_loc = memmem(kernel_buf, kernel_len, vMMapEnterString, sizeof(vMMapEnterString));
@@ -132,7 +132,66 @@ int get_vm_map_enter_patch(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
-int get_mount_common_patch(void* kernel_buf,size_t kernel_len) {
+// iOS 7 arm64
+int get_vm_map_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
+    // search 0A 79 1D 12
+    //AND             W10, W8, #0xFFFFFFFB
+    uint8_t search[] = { 0x0A, 0x79, 0x1D, 0x12 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_map_enter\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_map_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_map_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD503201F;
+    return 0;
+}
+
+// iOS 8 arm64
+int get_vm_map_protect_patch_ios8(void* kernel_buf,size_t kernel_len) {
+    // search 76 11 96 1A
+    //CSEL            W22, W11, W22, NE
+    uint8_t search[] = { 0x76, 0x11, 0x96, 0x1A };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_map_protect\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_map_protect\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_map_protect\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_protect\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD503201F;
+    return 0;
+}
+
+// iOS 7 arm64?? might not work
+int get_vm_map_protect_patch_ios7(void* kernel_buf,size_t kernel_len) {
+    
+    // search 76 11 8A 1A
+    //CSEL            W22, W11, W10, NE
+    uint8_t search[] = { 0x76, 0x11, 0x96, 0x1A };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_map_protect\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_map_protect\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_map_protect\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_protect\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD503201F;
+    return 0;
+}
+
+// iOS 7 arm64
+int get_mount_common_patch_ios7(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // search 29 03 10 32 F5 03 00 32 39 01 88 1A
     // ORR             w9, w25, #0x10000
@@ -142,13 +201,37 @@ int get_mount_common_patch(void* kernel_buf,size_t kernel_len) {
     uint8_t search[] = { 0x29, 0x03, 0x10, 0x32, 0xF5, 0x03, 0x00, 0x32, 0x39, 0x01, 0x88, 0x1A };
     void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
     if (!ent_loc) {
-        printf("%s: Could not find \"sub_ffffff8000385d68\" patch\n",__FUNCTION__);
+        printf("%s: Could not find \"mount_common\" patch\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"sub_ffffff8000385d68\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    printf("%s: Found \"mount_common\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"sub_ffffff8000385d68\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"sub_ffffff8000385d68\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"mount_common\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"mount_common\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    // add 0x8 to address https://github.com/TheRealClarity/wtfis/blob/main/wtfis/patchfinder64.c#L2121
+    xref_stuff = xref_stuff + 0x8;
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD503201F;
+    return 0;
+}
+
+// iOS 8 arm64
+int get_mount_common_patch_ios8(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search 89 02 10 32 34 01 88 1A
+    // ORR             W9, W20, #0x10000
+    // CSEL            W20, W9, W8, EQ
+    // add 0x8 to address
+    uint8_t search[] = { 0x89, 0x02, 0x10, 0x32, 0x34, 0x01, 0x88, 0x1A };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"mount_common\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"mount_common\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"mount_common\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"mount_common\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // add 0x8 to address https://github.com/TheRealClarity/wtfis/blob/main/wtfis/patchfinder64.c#L2121
     xref_stuff = xref_stuff + 0x8;
     // 0xD503201F is nop
@@ -164,8 +247,8 @@ int main(int argc, char **argv) {
     
     if(argc < 4){
         printf("Usage: %s <kernel_in> <kernel_out> <args>\n",argv[0]);
-        printf("\t-a\t\tPatch vm_map_enter (iOS 7 Only)\n");
-        printf("\t-s\t\tPatch vm_map_protect (iOS 7 Only)\n");
+        printf("\t-a\t\tPatch vm_map_enter (iOS 8 Only)\n");
+        printf("\t-s\t\tPatch vm_map_protect (iOS 8 Only)\n");
         printf("\t-m\t\tPatch mount_common (iOS 7 Only)\n");
         return 0;
     }
@@ -206,15 +289,19 @@ int main(int argc, char **argv) {
     for(int i=0;i<argc;i++) {
         if(strcmp(argv[i], "-e") == 0) {
             printf("Kernel: Adding vm_map_enter patch...\n");
-            get_vm_map_enter_patch(kernel_buf,kernel_len);
+            get_vm_map_enter_patch_ios11A24580o(kernel_buf,kernel_len);
+            get_vm_map_enter_patch_ios7(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-p") == 0) {
             printf("Kernel: Adding vm_map_protect patch...\n");
-            get_vm_map_protect_patch(kernel_buf,kernel_len);
+            get_vm_map_protect_patch_ios11A24580o(kernel_buf,kernel_len);
+            get_vm_map_protect_patch_ios8(kernel_buf,kernel_len);
+            get_vm_map_protect_patch_ios7(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-m") == 0) {
             printf("Kernel: Adding mount_common patch...\n");
-            get_mount_common_patch(kernel_buf,kernel_len);
+            get_mount_common_patch_ios7(kernel_buf,kernel_len);
+            get_mount_common_patch_ios8(kernel_buf,kernel_len);
         }
     }
     
