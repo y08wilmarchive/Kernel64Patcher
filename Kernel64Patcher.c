@@ -175,7 +175,7 @@ int get_vm_map_protect_patch_ios7(void* kernel_buf,size_t kernel_len) {
     
     // search 76 11 8A 1A
     //CSEL            W22, W11, W10, NE
-    uint8_t search[] = { 0x76, 0x11, 0x96, 0x1A };
+    uint8_t search[] = { 0x76, 0x11, 0x8A, 0x1A };
     void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
     if (!ent_loc) {
         printf("%s: Could not find \"vm_map_protect\" patch\n",__FUNCTION__);
