@@ -146,8 +146,6 @@ int get_vm_map_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
     printf("%s: Found \"vm_map_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     printf("%s: Patching \"vm_map_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    // the length of our search is 8 not 4, so we have to add 0x4 twice to the xref
-    xref_stuff = xref_stuff + 0x4;
     // 0xD503201F is nop
     *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD503201F;
     return 0;
