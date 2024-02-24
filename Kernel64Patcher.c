@@ -134,6 +134,25 @@ int get_vm_map_enter_patch_ios11A24580o(void* kernel_buf,size_t kernel_len) {
 
 // iOS 7 arm64
 int get_vm_map_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
+    // search 03 19 B8 A8 13 40 B9 0A 05 1F 12 09 79 1D 12
+    //AND             w9, w8, #0xfffffffb
+    uint8_t search[] = { 0x03, 0x19, 0xB8, 0xA8, 0x13, 0x40, 0xB9, 0x0A, 0x05, 0x1F, 0x12, 0x09, 0x79, 0x1D, 0x12 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_map_enter\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_map_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_map_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD503201F;
+    return 0;
+}
+
+// iOS 8 arm64
+int get_vm_map_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
     // search 0A 79 1D 12
     //AND             W10, W8, #0xFFFFFFFB
     uint8_t search[] = { 0x0A, 0x79, 0x1D, 0x12 };
@@ -172,7 +191,6 @@ int get_vm_map_protect_patch_ios8(void* kernel_buf,size_t kernel_len) {
 
 // iOS 7 arm64?? might not work
 int get_vm_map_protect_patch_ios7(void* kernel_buf,size_t kernel_len) {
-    
     // search 76 11 8A 1A
     //CSEL            W22, W11, W10, NE
     uint8_t search[] = { 0x76, 0x11, 0x8A, 0x1A };
@@ -291,12 +309,13 @@ int main(int argc, char **argv) {
             printf("Kernel: Adding vm_map_enter patch...\n");
             get_vm_map_enter_patch_ios11A24580o(kernel_buf,kernel_len);
             get_vm_map_enter_patch_ios7(kernel_buf,kernel_len);
+            get_vm_map_enter_patch_ios8(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-p") == 0) {
             printf("Kernel: Adding vm_map_protect patch...\n");
             get_vm_map_protect_patch_ios11A24580o(kernel_buf,kernel_len);
-            get_vm_map_protect_patch_ios8(kernel_buf,kernel_len);
             get_vm_map_protect_patch_ios7(kernel_buf,kernel_len);
+            get_vm_map_protect_patch_ios8(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-m") == 0) {
             printf("Kernel: Adding mount_common patch...\n");
