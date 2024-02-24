@@ -26,7 +26,7 @@ int get_vm_map_protect_patch(void* kernel_buf,size_t kernel_len) {
         printf("%s: Could not find \"!current->use_pmap\" xref\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"!current->use_pmap\n",__FUNCTION__,(void*)xref_stuff);
+    printf("%s: Found \"!current->use_pmap\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
 
     xref_stuff = xref_stuff + 0x4; // step one line forward in arm64 assembly
     
@@ -119,7 +119,7 @@ int get_vm_map_enter_patch(void* kernel_buf,size_t kernel_len) {
         printf("%s: Could not find \"EMBEDDED: %%s curprot cannot be write+execute. turning off execute\" xref\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"EMBEDDED: %%s curprot cannot be write+execute. turning off execute\n",__FUNCTION__,(void*)xref_stuff);
+    printf("%s: Found \"EMBEDDED: %%s curprot cannot be write+execute. turning off execute\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
 
     xref_stuff = xref_stuff + 0x4; // step one line forward in arm64 assembly
     
@@ -147,12 +147,12 @@ int get_mount_common_patch(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"sub_ffffff8000385d68\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"sub_ffffff8000385d68\n",__FUNCTION__,(void*)xref_stuff);
+    printf("%s: Found \"sub_ffffff8000385d68\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     printf("%s: Patching \"sub_ffffff8000385d68\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // add 0x8 to address https://github.com/TheRealClarity/wtfis/blob/main/wtfis/patchfinder64.c#L2121
     xref_stuff = xref_stuff + 0x8;
     // 0xD503201F is nop
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F;
+    *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD503201F;
     return 0;
 }
 
