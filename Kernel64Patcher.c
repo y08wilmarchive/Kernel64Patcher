@@ -132,6 +132,34 @@ int get_vm_map_enter_patch(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+int get_mount_common_patch(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search 29 03 10 32 F5 03 00 32 39 01 88 1A
+    // ORR             w9, w25, #0x10000
+    // ORR             w21, wzr, #0x1
+    // CSEL            w25, w9, w8, eq
+    // add 0x8 to address
+    uint8_t search[] = { 0x29, 0x03, 0x10, 0x32, 0xF5, 0x03, 0x00, 0x32, 0x39, 0x01, 0x88, 0x1A };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"sub_ffffff8000385d68\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sub_ffffff8000385d68\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
+    if(!xref_stuff) {
+        printf("%s: Could not find \"sub_ffffff8000385d68\" patch xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sub_ffffff8000385d68\n",__FUNCTION__,(void*)xref_stuff);
+    printf("%s: Patching \"sub_ffffff8000385d68\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    // add 0x8 to address https://github.com/TheRealClarity/wtfis/blob/main/wtfis/patchfinder64.c#L2121
+    xref_stuff = xref_stuff + 0x8;
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F;
+    return 0;
+}
+
 int main(int argc, char **argv) {
     
     printf("%s: Starting...\n", __FUNCTION__);
@@ -142,6 +170,7 @@ int main(int argc, char **argv) {
         printf("Usage: %s <kernel_in> <kernel_out> <args>\n",argv[0]);
         printf("\t-a\t\tPatch vm_map_enter (iOS 7 Only)\n");
         printf("\t-s\t\tPatch vm_map_protect (iOS 7 Only)\n");
+        printf("\t-s\t\tPatch mount_common (iOS 7 Only)\n");
         return 0;
     }
     
@@ -186,6 +215,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-p") == 0) {
             printf("Kernel: Adding vm_map_protect patch...\n");
             get_vm_map_protect_patch(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-m") == 0) {
+            printf("Kernel: Adding mount_common patch...\n");
+            get_mount_common_patch(kernel_buf,kernel_len);
         }
     }
     
