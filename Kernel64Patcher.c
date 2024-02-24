@@ -146,11 +146,7 @@ int get_mount_common_patch(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"sub_ffffff8000385d68\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
-    if(!xref_stuff) {
-        printf("%s: Could not find \"sub_ffffff8000385d68\" patch xref\n",__FUNCTION__);
-        return -1;
-    }
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
     printf("%s: Found \"sub_ffffff8000385d68\n",__FUNCTION__,(void*)xref_stuff);
     printf("%s: Patching \"sub_ffffff8000385d68\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // add 0x8 to address https://github.com/TheRealClarity/wtfis/blob/main/wtfis/patchfinder64.c#L2121
@@ -170,7 +166,7 @@ int main(int argc, char **argv) {
         printf("Usage: %s <kernel_in> <kernel_out> <args>\n",argv[0]);
         printf("\t-a\t\tPatch vm_map_enter (iOS 7 Only)\n");
         printf("\t-s\t\tPatch vm_map_protect (iOS 7 Only)\n");
-        printf("\t-s\t\tPatch mount_common (iOS 7 Only)\n");
+        printf("\t-m\t\tPatch mount_common (iOS 7 Only)\n");
         return 0;
     }
     
