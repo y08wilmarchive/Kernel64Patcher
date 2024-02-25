@@ -185,6 +185,7 @@ int get_vm_map_protect_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Found \"vm_map_protect\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     printf("%s: Patching \"vm_map_protect\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0xD503201F is nop
+    // it should be mov w9, w8, not nop
     *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD503201F;
     return 0;
 }
