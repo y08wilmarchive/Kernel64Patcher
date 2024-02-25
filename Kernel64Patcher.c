@@ -11,127 +11,6 @@
 
 #define GET_OFFSET(kernel_len, x) (x - (uintptr_t) kernel_buf)
 
-// iOS 7 vm_map_protect Patch
-int get_vm_map_protect_patch_ios11A24580o(void* kernel_buf,size_t kernel_len) {
-    printf("%s: Entering ...\n",__FUNCTION__);
-    char* vMMapProtectString = "!current->use_pmap";
-    void* ent_loc = memmem(kernel_buf, kernel_len, vMMapProtectString, sizeof(vMMapProtectString));
-    if(!ent_loc) {
-        printf("%s: Could not find \"!current->use_pmap\" string\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"!current->use_pmap\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
-    if(!xref_stuff) {
-        printf("%s: Could not find \"!current->use_pmap\" xref\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"!current->use_pmap\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-
-    xref_stuff = xref_stuff + 0x4; // step one line forward in arm64 assembly
-    
-    // step 10 lines backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    
-    // step 10 lines backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    
-    // step 10 lines backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    
-    // step 10 lines backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    
-    // step 10 lines backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    
-    // step 5 lines backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-    xref_stuff = xref_stuff - 0x4; // step one line backward in arm64 assembly
-
-    printf("%s: Patching \"vm_map_protect\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    // 0xD503201F is nop, so we are eliminating the clearing of VM_PROT_EXECUTE https://theapplewiki.com/wiki/Vm_map_protect_Patch
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F;
-    
-    return 0;
-}
-
-// iOS 7 vm_map_enter Patch
-int get_vm_map_enter_patch_ios11A24580o(void* kernel_buf,size_t kernel_len) {
-    printf("%s: Entering ...\n",__FUNCTION__);
-    char* vMMapEnterString = "EMBEDDED: %%s curprot cannot be write+execute. turning off execute\n";
-    void* ent_loc = memmem(kernel_buf, kernel_len, vMMapEnterString, sizeof(vMMapEnterString));
-    if(!ent_loc) {
-        printf("%s: Could not find \"EMBEDDED: %%s curprot cannot be write+execute. turning off execute\" string\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"EMBEDDED: %%s curprot cannot be write+execute. turning off execute\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
-    if(!xref_stuff) {
-        printf("%s: Could not find \"EMBEDDED: %%s curprot cannot be write+execute. turning off execute\" xref\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"EMBEDDED: %%s curprot cannot be write+execute. turning off execute\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-
-    xref_stuff = xref_stuff + 0x4; // step one line forward in arm64 assembly
-    
-    xref_stuff = xref_stuff - 0x4 - 0x4 - 0x4 - 0x4 - 0x4 - 0x4 - 0x4 - 0x4; // step 8 lines backward in arm64 assembly
-
-    printf("%s: Patching \"vm_map_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    // 0xD503201F is nop, so we are eliminating the conditional check https://theapplewiki.com/wiki/Vm_map_enter_Patch
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F;
-    
-    return 0;
-}
-
 // iOS 7 arm64
 int get_vm_map_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
     // search 0A 05 1F 12 09 79 1D 12
@@ -146,66 +25,13 @@ int get_vm_map_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
     printf("%s: Found \"vm_map_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     printf("%s: Patching \"vm_map_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    // 0xD503201F is nop
-    *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD503201F;
-    return 0;
-}
-
-// iOS 8 arm64
-int get_vm_map_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
-    // search 0A 79 1D 12
-    //AND             W10, W8, #0xFFFFFFFB
-    uint8_t search[] = { 0x0A, 0x79, 0x1D, 0x12 };
-    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
-    if (!ent_loc) {
-        printf("%s: Could not find \"vm_map_enter\" patch\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"vm_map_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vm_map_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"vm_map_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    // 0xD503201F is nop
-    *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD503201F;
-    return 0;
-}
-
-// iOS 8 arm64
-int get_vm_map_protect_patch_ios8(void* kernel_buf,size_t kernel_len) {
-    // search 76 11 96 1A
-    //CSEL            W22, W11, W22, NE
-    uint8_t search[] = { 0x76, 0x11, 0x96, 0x1A };
-    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
-    if (!ent_loc) {
-        printf("%s: Could not find \"vm_map_protect\" patch\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"vm_map_protect\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vm_map_protect\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"vm_map_protect\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    // 0xD503201F is nop
-    // it should be mov w9, w8, not nop
-    *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD503201F;
-    return 0;
-}
-
-// iOS 7 arm64?? might not work
-int get_vm_map_protect_patch_ios7(void* kernel_buf,size_t kernel_len) {
-    // search 76 11 8A 1A
-    //CSEL            W22, W11, W10, NE
-    uint8_t search[] = { 0x76, 0x11, 0x8A, 0x1A };
-    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
-    if (!ent_loc) {
-        printf("%s: Could not find \"vm_map_protect\" patch\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"vm_map_protect\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vm_map_protect\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"vm_map_protect\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    // 0xD503201F is nop
-    *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD503201F;
+    // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
+    // https://cryptii.com/pipes/integer-encoder
+    // if you convert 1f2003D5 to a 32 bit unsigned integer in little endian https://archive.is/22JSe
+    // you will get d503201f as a result, which can be used after the = sign to make this a nop
+    // however this vm_map_enter patch needs to be mov w9, w8 not a nop
+    // mov w9, w8 is 0xE9 0x03 0x08 0x2A which translates to 2a0803e9 in little endian
+    *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0x2A0803E9;
     return 0;
 }
 
@@ -229,7 +55,10 @@ int get_mount_common_patch_ios7(void* kernel_buf,size_t kernel_len) {
     printf("%s: Patching \"mount_common\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // add 0x8 to address https://github.com/TheRealClarity/wtfis/blob/main/wtfis/patchfinder64.c#L2121
     xref_stuff = xref_stuff + 0x8;
-    // 0xD503201F is nop
+    // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
+    // https://cryptii.com/pipes/integer-encoder
+    // if you convert 1f2003D5 to a 32 bit unsigned integer in little endian https://archive.is/22JSe
+    // you will get d503201f as a result, which can be used after the = sign to make this a nop
     *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD503201F;
     return 0;
 }
@@ -266,9 +95,8 @@ int main(int argc, char **argv) {
     
     if(argc < 4){
         printf("Usage: %s <kernel_in> <kernel_out> <args>\n",argv[0]);
-        printf("\t-e\t\tPatch vm_map_enter (iOS 8 Only)\n");
-        printf("\t-p\t\tPatch vm_map_protect (iOS 8 Only)\n");
         printf("\t-m\t\tPatch mount_common (iOS 7 Only)\n");
+        printf("\t-o\t\tPatch mount_common (iOS 8 Only)\n");
         return 0;
     }
     
@@ -308,19 +136,14 @@ int main(int argc, char **argv) {
     for(int i=0;i<argc;i++) {
         if(strcmp(argv[i], "-e") == 0) {
             printf("Kernel: Adding vm_map_enter patch...\n");
-            get_vm_map_enter_patch_ios11A24580o(kernel_buf,kernel_len);
             get_vm_map_enter_patch_ios7(kernel_buf,kernel_len);
-            get_vm_map_enter_patch_ios8(kernel_buf,kernel_len);
-        }
-        if(strcmp(argv[i], "-p") == 0) {
-            printf("Kernel: Adding vm_map_protect patch...\n");
-            get_vm_map_protect_patch_ios11A24580o(kernel_buf,kernel_len);
-            get_vm_map_protect_patch_ios7(kernel_buf,kernel_len);
-            get_vm_map_protect_patch_ios8(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-m") == 0) {
             printf("Kernel: Adding mount_common patch...\n");
             get_mount_common_patch_ios7(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-o") == 0) {
+            printf("Kernel: Adding mount_common patch...\n");
             get_mount_common_patch_ios8(kernel_buf,kernel_len);
         }
     }
