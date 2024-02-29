@@ -113,6 +113,28 @@ int get_mount_common_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 8 NoMoreSIGABRT
+int get_NoMoreSIGABRT_patch_ios8(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search 48 58 00 05 80 00 21 00
+    // add 0x4 to address to get 0x80 0x00 0x21 0x00
+    uint8_t search[] = { 0x48, 0x58, 0x00, 0x05, 0x80, 0x00, 0x21, 0x00 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"NoMoreSIGABRT\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"NoMoreSIGABRT\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"NoMoreSIGABRT\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"NoMoreSIGABRT\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0x2100c0 is 0xC0 0x00 0x21 0x00
+    // we are replacing 0x80 0x00 0x21 0x00 with 0xC0 0x00 0x21 0x00
+    // see https://nyansatan.github.io/dualboot/modifyingfilesystems.html for more info
+    *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0x2100c0;
+    return 0;
+}
+
 int main(int argc, char **argv) {
     
     printf("%s: Starting...\n", __FUNCTION__);
@@ -123,6 +145,7 @@ int main(int argc, char **argv) {
         printf("Usage: %s <kernel_in> <kernel_out> <args>\n",argv[0]);
         printf("\t-m\t\tPatch mount_common (iOS 7& 8 Only)\n");
         printf("\t-e\t\tPatch vm_map_enter (iOS 7& 8 Only)\n");
+        printf("\t-n\t\tPatch NoMoreSIGABRT (iOS >=8.0 && iOS <10.3 Only)\n");
         return 0;
     }
     
@@ -169,6 +192,10 @@ int main(int argc, char **argv) {
             printf("Kernel: Adding mount_common patch...\n");
             get_mount_common_patch_ios7(kernel_buf,kernel_len);
             get_mount_common_patch_ios8(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-n") == 0) {
+            printf("Kernel: Adding NoMoreSIGABRT patch...\n");
+            get_NoMoreSIGABRT_patch_ios8(kernel_buf,kernel_len);
         }
     }
     
