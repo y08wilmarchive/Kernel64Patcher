@@ -985,7 +985,9 @@ find_sbops(void)
     
     //xref_stuff = xref_stuff - kerndumpbase;
     
-    xref_stuff = xref_stuff - 0;
+    xref_stuff = xref_stuff - 0x4;
+    
+    xref_stuff = xref_stuff + 0x4;
     
     printf("%s: Found \"Seatbelt sandbox policy\" loc at %o\n",__FUNCTION__,(void*)(xref_stuff));
     
