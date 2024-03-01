@@ -143,17 +143,43 @@ int get_undo_NoMoreSIGABRT_patch_ios8(void* kernel_buf,size_t kernel_len) {
     uint8_t search[] = { 0x48, 0x58, 0x00, 0x05, 0xC0, 0x00, 0x21, 0x00 };
     void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
     if (!ent_loc) {
-        printf("%s: Could not find \"NoMoreSIGABRT\" patch\n",__FUNCTION__);
+        printf("%s: Could not find \"undo_NoMoreSIGABRT\" patch\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"NoMoreSIGABRT\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    printf("%s: Found \"undo_NoMoreSIGABRT\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"NoMoreSIGABRT\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"NoMoreSIGABRT\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"undo_NoMoreSIGABRT\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"undo_NoMoreSIGABRT\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0x210080 is 0x80 0x00 0x21 0x00
     // we are replacing 0xC0 0x00 0x21 0x00 with 0x80 0x00 0x21 0x00
     // see https://nyansatan.github.io/dualboot/modifyingfilesystems.html for more info
     *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0x210080;
+    return 0;
+}
+
+// arm64
+int get_PE_i_can_has_debugger_patch_ios8_ios9(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search 08 00 00 B9 02 00 00 14 1F 00 00 B9
+    // str w8, [x0]
+    // b 0xffffff80024162e4
+    // str wzr, [x0]
+    uint8_t search[] = { 0x08, 0x00, 0x00, 0xB9, 0x02, 0x00, 0x00, 0x14, 0x1F, 0x00, 0x00, 0xB9 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"PE_i_can_has_debugger\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"PE_i_can_has_debugger\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    // loc starts at str w8, [x0], we can add +0x4 to go a line forward and -0x4 to go back
+    printf("%s: Found \"PE_i_can_has_debugger\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0x28 0x00 0x80 0x52 for top of sandbox patch at ldr w8, data_ ...
+    // 0x20 0x00 0x80 0x52 for bottom of sandbox patch at ldr w0, data_ ...
+    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff - 0x4 - 0x4 - 0x4 - 0x4 - 0x4));
+    *(uint32_t *) (kernel_buf + xref_stuff - 0x4 - 0x4 - 0x4 - 0x4 - 0x4) = 0x52800028;
+    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff + 0x4 + 0x4 + 0x4 + 0x4 + 0x4));
+    *(uint32_t *) (kernel_buf + xref_stuff + 0x4 + 0x4 + 0x4 + 0x4 + 0x4) = 0x52800020;
     return 0;
 }
 
@@ -167,8 +193,9 @@ int main(int argc, char **argv) {
         printf("Usage: %s <kernel_in> <kernel_out> <args>\n",argv[0]);
         printf("\t-m\t\tPatch mount_common (iOS 7& 8 Only)\n");
         printf("\t-e\t\tPatch vm_map_enter (iOS 7& 8 Only)\n");
-        printf("\t-n\t\tPatch NoMoreSIGABRT (iOS >=8.0 && iOS <10.3 Only)\n");
-        printf("\t-n\t\tPatch undo-NoMoreSIGABRT (iOS >=8.0 && iOS <10.3 Only)\n");
+        printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
+        printf("\t-n\t\tPatch NoMoreSIGABRT\n");
+        printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         return 0;
     }
     
@@ -216,12 +243,16 @@ int main(int argc, char **argv) {
             get_mount_common_patch_ios7(kernel_buf,kernel_len);
             get_mount_common_patch_ios8(kernel_buf,kernel_len);
         }
+        if(strcmp(argv[i], "-s") == 0) {
+            printf("Kernel: Adding PE_i_can_has_debugger patch...\n");
+            get_PE_i_can_has_debugger_patch_ios8_ios9(kernel_buf,kernel_len);
+        }
         if(strcmp(argv[i], "-n") == 0) {
             printf("Kernel: Adding NoMoreSIGABRT patch...\n");
             get_NoMoreSIGABRT_patch_ios8(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-o") == 0) {
-            printf("Kernel: Adding undo-NoMoreSIGABRT patch...\n");
+            printf("Kernel: Adding undo NoMoreSIGABRT patch...\n");
             get_undo_NoMoreSIGABRT_patch_ios8(kernel_buf,kernel_len);
         }
     }
