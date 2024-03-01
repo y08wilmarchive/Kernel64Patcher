@@ -7,8 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
-#include <assert.h>
-#include <stdint.h>
 
 #include "sbops.h"
 
