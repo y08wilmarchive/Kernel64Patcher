@@ -229,7 +229,7 @@ int get_sbops_patch_ios8(void* kernel_buf,size_t kernel_len) {
         return - 1;
     }
     printf("%s: Found \"Seatbelt sandbox policy\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"mpo_file_check_mmap\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_file_check_mmap)));
+    printf("%s: Patching \"mpo_file_check_mmap\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + (addr_t)xref_stuff + offsetof(struct mac_policy_ops, mpo_file_check_mmap)));
     *(uint64_t *) (kernel_buf + (addr_t)xref_stuff + offsetof(struct mac_policy_ops, mpo_file_check_mmap)) = 0x0;
     printf("%s: Patching \"mpo_vnode_check_rename\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_rename)));
     *(uint64_t *) (kernel_buf + (addr_t)xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_rename)) = 0x0;
