@@ -982,7 +982,7 @@ find_sbops(void)
     
     ref = *(ref + 3);
     
-    void* xref_stuff = ref - kerndumpbase;
+    uint64_t xref_stuff = ref - kerndumpbase;
     
     printf("%s: Found \"sbops\" loc at %o\n",__FUNCTION__,xref_stuff);
     
