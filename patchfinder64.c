@@ -973,7 +973,7 @@ find_sbops(void)
     what = str - kernel + kerndumpbase;
     for (off = 0; off < kernel_size - prelink_base; off += 8) {
         printf("%s: HIT 3\n",__FUNCTION__);
-        if (*(uint64_t *)(kernel + prelink_base + off) == what) {
+        if (*(uint64_t)(kernel + prelink_base + off) == what) {
             printf("%s: HIT 4\n",__FUNCTION__);
             printf("%s: Found \"sbops\" loc at %llu\n",__FUNCTION__,*(uint64_t *)(kernel + prelink_base + off + 24));
             return *(uint64_t *)(kernel + prelink_base + off + 24);
