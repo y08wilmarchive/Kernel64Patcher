@@ -525,7 +525,7 @@ static void *kernel_mh = 0;
 static addr_t kernel_delta = 0;
 
 int
-init_kernel(addr_t base, const char *filename)
+init_kernel(addr_t base, char *filename)
 {
     printf("hit 1");
     size_t rv;

@@ -301,6 +301,8 @@ int main(int argc, char **argv) {
     void* kernel_buf;
     size_t kernel_len;
     
+    char *filename = argv[1];
+    
     fp = fopen(argv[1], "rb");
     if(!fp) {
         printf("%s: Error opening %s!\n", __FUNCTION__, argv[1]);
@@ -330,6 +332,14 @@ int main(int argc, char **argv) {
         printf("%s: Detected fat macho kernel\n",__FUNCTION__);
         memmove(kernel_buf,kernel_buf+28,kernel_len);
     }
+    
+    init_kernel(0, filename);
+    
+    addr_t sbops = find_sbops();
+    
+    printf("sbops = 0x%llx\n", sbops);
+
+    term_kernel();
     
     for(int i=0;i<argc;i++) {
         if(strcmp(argv[i], "-e") == 0) {
