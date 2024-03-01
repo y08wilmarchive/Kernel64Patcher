@@ -566,24 +566,24 @@ init_kernel(addr_t base, char *filename)
         printf("hit 6\n");
     }
     
-        printf("hit 7\n");
+    printf("hit 7\n");
 
     if (IS64(buf)) {
         is64 = 4;
     }
     
-        printf("hit 8\n");
+    printf("hit 8\n");
 
 
     q = buf + sizeof(struct mach_header) + is64;
-        printf("hit 9\n");
+    printf("hit 9\n");
 
     for (i = 0; i < hdr->ncmds; i++) {
         const struct load_command *cmd = (struct load_command *)q;
-            printf("hit 10\n");
+        printf("hit 10\n");
 
         if (cmd->cmd == LC_SEGMENT_64 && ((struct segment_command_64 *)q)->vmsize) {
-                printf("hit 11\n");
+            printf("hit 11\n");
 
             const struct segment_command_64 *seg = (struct segment_command_64 *)q;
             if (min > seg->vmaddr) {
@@ -623,6 +623,7 @@ init_kernel(addr_t base, char *filename)
                 }
             }
         }
+        printf("hit 12\n");
         if (cmd->cmd == LC_UNIXTHREAD) {
             uint32_t *ptr = (uint32_t *)(cmd + 1);
             uint32_t flavor = ptr[0];
@@ -638,9 +639,11 @@ init_kernel(addr_t base, char *filename)
                 kernel_entry = thread->pc;
             }
         }
+        printf("hit 13\n");
         q = q + cmd->cmdsize;
     }
 
+    printf("hit 14\n");
     if (pstring_base == 0 && pstring_size == 0) {
         pstring_base = cstring_base;
         pstring_size = cstring_size;
