@@ -959,27 +959,49 @@ find_amfi_memcmpstub(void)
 addr_t
 find_sbops(void)
 {
-    addr_t off;
+    const char sbops[] = "Seatbelt sandbox policy";
+    void* ent_loc = boyermoore_horspool_memmem(kernel + pstring_base, pstring_size, sbops, sizeof(sbops) / sizeof(*sbops));
+    if(!ent_loc) {
+        printf("%s: Could not find \"Seatbelt sandbox policy\" string\n",__FUNCTION__);
+        return -1;
+    }
+    uint64_t region = 0x0;
+    uint64_t strAddress = (uintptr_t) ent_loc - (uintptr_t) kernel + pstring_base;
+    printf("%s: Found \"Seatbelt sandbox policy\" str loc at %p\n",__FUNCTION__,strAddress);
+    uint64_t* ref = memmem(kernel, kernel_size, &strAddress, sizeof(strAddress));
+    if(!ref) {
+        printf("%s: Could not find \"Seatbelt sandbox policy\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"Seatbelt sandbox policy\" xref at %p\n\n", __FUNCTION__,(void*)(ref));
+    
+    ref = *(ref + 3);
+    
+    void* xref_stuff = ref - pstring_base;
+    
+    printf("%s: Found \"sbops\" loc at %o\n",__FUNCTION__,xref_stuff);
+    
+    //addr_t off;
     printf("%s: kernel_size at %p\n",__FUNCTION__,kernel_size);
     printf("%s: pstring_base at %p\n",__FUNCTION__,pstring_base);
     printf("%s: prelink_base at %p\n",__FUNCTION__,prelink_base);
     printf("%s: kerndumpbase at %p\n",__FUNCTION__,kerndumpbase);
-    printf("%s: HIT 1\n",__FUNCTION__);
-    uint8_t *str = boyermoore_horspool_memmem(kernel + pstring_base, pstring_size, (uint8_t *)"Seatbelt sandbox policy", sizeof("Seatbelt sandbox policy") - 1);
-    if (!str) {
-        return 0;
-    }
-    printf("%s: HIT 2\n",__FUNCTION__);
-    uint64_t what = str - kernel + kerndumpbase;
-    for (off = 0; off < kernel_size - prelink_base; off += 4) {
-        printf("%s: HIT 3\n",__FUNCTION__);
-        if ((uint64_t)(kernel + prelink_base + off) == what) {
-            printf("%s: HIT 4\n",__FUNCTION__);
-            printf("%s: Found \"sbops\" loc at %llu\n",__FUNCTION__,*(uint64_t *)(kernel + prelink_base + off + 24));
-            return *(uint64_t *)(kernel + prelink_base + off + 24);
-        }
-    }
-    printf("%s: HIT 5\n",__FUNCTION__);
+    //printf("%s: HIT 1\n",__FUNCTION__);
+    //uint8_t *str = boyermoore_horspool_memmem(kernel + pstring_base, pstring_size, (uint8_t *)"Seatbelt sandbox policy", sizeof("Seatbelt sandbox policy") - 1);
+    //if (!str) {
+    //    return 0;
+    //}
+    //printf("%s: HIT 2\n",__FUNCTION__);
+    //uint64_t what = str - kernel + kerndumpbase;
+    //for (off = 0; off < kernel_size - prelink_base; off += 4) {
+    //    printf("%s: HIT 3\n",__FUNCTION__);
+    //    if ((uint64_t)(kernel + prelink_base + off) == what) {
+    //        printf("%s: HIT 4\n",__FUNCTION__);
+    //        printf("%s: Found \"sbops\" loc at %llu\n",__FUNCTION__,*(uint64_t *)(kernel + prelink_base + off + 24));
+    //        return *(uint64_t *)(kernel + prelink_base + off + 24);
+    //    }
+    //}
+    //printf("%s: HIT 5\n",__FUNCTION__);
     return 0;
 }
 
