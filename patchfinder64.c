@@ -712,6 +712,8 @@ init_kernel(addr_t base, char *filename)
     if (vstr) {
         kernel_version = atoi((const char *)vstr + sizeof("Darwin Kernel Version"));
     }
+    
+    printf("hit 15\n");
 
     return 0;
 }
