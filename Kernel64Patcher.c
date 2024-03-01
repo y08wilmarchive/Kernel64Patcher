@@ -335,12 +335,6 @@ int main(int argc, char **argv) {
     
     init_kernel(0, filename);
     
-    addr_t sbops = find_sbops();
-    
-    printf("sbops = 0x%llx\n", sbops);
-
-    term_kernel();
-    
     for(int i=0;i<argc;i++) {
         if(strcmp(argv[i], "-e") == 0) {
             printf("Kernel: Adding vm_map_enter patch...\n");
@@ -369,6 +363,8 @@ int main(int argc, char **argv) {
             get_undo_NoMoreSIGABRT_patch_ios8(kernel_buf,kernel_len);
         }
     }
+    
+    term_kernel();
     
     /* Write patched kernel */
     printf("%s: Writing out patched file to %s...\n", __FUNCTION__, argv[2]);
