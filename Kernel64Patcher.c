@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "sbops.h"
 
@@ -238,7 +239,7 @@ int get_sbops_patch_ios8(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"Seatbelt sandbox policy\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     
-    xref_stuff = *(xref_stuff + 3);
+    xref_stuff = xref_stuff + 3;
     
     printf("%s: Found \"Seatbelt sandbox policy\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     
@@ -273,61 +274,6 @@ int get_sbops_patch_ios8(void* kernel_buf,size_t kernel_len) {
     *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_fsgetpath)) = 0x0;
     *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_getattr)) = 0x0;
     *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_mount_check_stat)) = 0x0;
-    
-    #uint64_t find_sbops(uint64_t region, uint8_t* kdata, size_t ksize)
-    #{
-    #    const char sbops[] = "Seatbelt sandbox policy";
-    #    
-    #    uint8_t *sbops_offset = memmem(kdata, ksize, sbops, sizeof(sbops) / sizeof(*sbops));
-    #    if (!sbops_offset)
-    #        return 0;
-    #    uint64_t strAddress = (uintptr_t)sbops_offset - (uintptr_t)kdata + region;
-    #    uint64_t* ref = memmem(kdata, ksize, &strAddress, sizeof(strAddress));
-    #    if (!ref)
-    #        return 0;
-    #    
-    #    uint64_t sandbox_mac_policy_ops_ptr = *(ref + 3);
-    #    return sandbox_mac_policy_ops_ptr - region;
-    #}
-    
-    #/* patch le sandbox */
-    #Log(@"[i] Patching SBOPS...");
-    
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_file_check_mmap),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_rename),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_rename),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_access),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_chroot),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_create),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_deleteextattr),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_exchangedata),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_exec),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_getattrlist),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_getextattr),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_ioctl),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_link),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_listextattr),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_open),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_readlink),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setattrlist),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setextattr),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setflags),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setmode),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setowner),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setutimes),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setutimes),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_stat),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_truncate),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_unlink),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_notify_create),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_fsgetpath),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_getattr),0);
-    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_mount_check_stat),0);
-    
-    #void wk64(uint64_t where, uint64_t what) {
-    #    uint64_t _what = what;
-    #    kwrite(where, &_what, sizeof(uint64_t));
-    #}
     
     return 0;
 }
