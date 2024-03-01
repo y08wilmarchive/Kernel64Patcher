@@ -221,7 +221,7 @@ int get_PE_i_can_has_debugger_patch_ios9(void* kernel_buf,size_t kernel_len) {
 }
 
 // iOS 8 arm64
-int get_sbops_patch_ios8(uint8_t* kernel_buf,size_t kernel_len) {
+int get_sbops_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     uint64_t xref_stuff = find_sbops();
     if (xref_stuff == -1) {
