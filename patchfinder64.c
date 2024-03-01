@@ -964,17 +964,22 @@ find_sbops(void)
     printf("%s: pstring_base at %p\n",__FUNCTION__,pstring_base);
     printf("%s: prelink_base at %p\n",__FUNCTION__,prelink_base);
     printf("%s: kerndumpbase at %p\n",__FUNCTION__,kerndumpbase);
+    printf("%s: HIT 1\n",__FUNCTION__);
     uint8_t *str = boyermoore_horspool_memmem(kernel + pstring_base, pstring_size, (uint8_t *)"Seatbelt sandbox policy", sizeof("Seatbelt sandbox policy") - 1);
     if (!str) {
         return 0;
     }
+    printf("%s: HIT 2\n",__FUNCTION__);
     what = str - kernel + kerndumpbase;
     for (off = 0; off < kernel_size - prelink_base; off += 8) {
+        printf("%s: HIT 3\n",__FUNCTION__);
         if (*(uint64_t *)(kernel + prelink_base + off) == what) {
+            printf("%s: HIT 4\n",__FUNCTION__);
             printf("%s: Found \"sbops\" loc at %llu\n",__FUNCTION__,*(uint64_t *)(kernel + prelink_base + off + 24));
             return *(uint64_t *)(kernel + prelink_base + off + 24);
         }
     }
+    printf("%s: HIT 5\n",__FUNCTION__);
     return 0;
 }
 
