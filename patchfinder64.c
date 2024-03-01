@@ -960,9 +960,9 @@ addr_t
 find_sbops(void)
 {
     addr_t off, what;
-    printf("%s: prelink_base at %p\n",__FUNCTION__,prelink_base);
     printf("%s: kernel_size at %p\n",__FUNCTION__,kernel_size);
     printf("%s: pstring_base at %p\n",__FUNCTION__,pstring_base);
+    printf("%s: prelink_base at %p\n",__FUNCTION__,prelink_base);
     uint8_t *str = boyermoore_horspool_memmem(kernel + pstring_base, pstring_size, (uint8_t *)"Seatbelt sandbox policy", sizeof("Seatbelt sandbox policy") - 1);
     if (!str) {
         return 0;
