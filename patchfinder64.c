@@ -714,6 +714,12 @@ init_kernel(addr_t base, char *filename)
     }
     
     printf("hit 15\n");
+    
+    addr_t sbops = find_sbops();
+    
+    printf("sbops = 0x%llx\n", sbops);
+    
+    printf("hit 16\n");
 
     return 0;
 }
