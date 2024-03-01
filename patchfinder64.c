@@ -444,290 +444,6 @@ xref64code(const uint8_t *buf, addr_t start, addr_t end, addr_t what)
     return 0;
 }
 
-/* kernel iOS10 **************************************************************/
-
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <mach-o/loader.h>
-//#include "vfs.h" // img4lib
-
-#ifdef __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__
-#include <mach/mach.h>
-size_t kread(uint64_t where, void *p, size_t size);
-#endif
-
-#ifdef VFS_H_included
-#define INVALID_HANDLE NULL
-static FHANDLE
-OPEN(const char *filename, int oflag)
-{
-    ssize_t rv;
-    char buf[28];
-    FHANDLE fd = file_open(filename, oflag);
-    if (!fd) {
-        return NULL;
-    }
-    rv = fd->read(fd, buf, 4);
-    fd->lseek(fd, 0, SEEK_SET);
-    if (rv == 4 && !MACHO(buf)) {
-        fd = img4_reopen(fd, NULL, 0);
-        if (!fd) {
-            return NULL;
-        }
-        rv = fd->read(fd, buf, sizeof(buf));
-        if (rv == sizeof(buf) && *(uint32_t *)buf == 0xBEBAFECA && __builtin_bswap32(*(uint32_t *)(buf + 4)) > 0) {
-            return sub_reopen(fd, __builtin_bswap32(*(uint32_t *)(buf + 16)), __builtin_bswap32(*(uint32_t *)(buf + 20)));
-        }
-        fd->lseek(fd, 0, SEEK_SET);
-    }
-    return fd;
-}
-#define CLOSE(fd) (fd)->close(fd)
-#define READ(fd, buf, sz) (fd)->read(fd, buf, sz)
-static ssize_t
-PREAD(FHANDLE fd, void *buf, size_t count, off_t offset)
-{
-    ssize_t rv;
-    //off_t pos = fd->lseek(FHANDLE fd, 0, SEEK_CUR);
-    fd->lseek(fd, offset, SEEK_SET);
-    rv = fd->read(fd, buf, count);
-    //fd->lseek(FHANDLE fd, pos, SEEK_SET);
-    return rv;
-}
-#else
-#define FHANDLE int
-#define INVALID_HANDLE -1
-#define OPEN open
-#define CLOSE close
-#define READ read
-#define PREAD pread
-#endif
-
-static uint8_t *kernel = NULL;
-static int kernel_version = 0;
-static size_t kernel_size = 0;
-
-static addr_t xnucore_base = 0;
-static addr_t xnucore_size = 0;
-static addr_t prelink_base = 0;
-static addr_t prelink_size = 0;
-static addr_t pplcode_base = 0;
-static addr_t pplcode_size = 0;
-static addr_t cstring_base = 0;
-static addr_t cstring_size = 0;
-static addr_t pstring_base = 0;
-static addr_t pstring_size = 0;
-static addr_t kerndumpbase = -1;
-static addr_t kernel_entry = 0;
-static void *kernel_mh = 0;
-static addr_t kernel_delta = 0;
-
-int
-init_kernel(addr_t base, char *filename)
-{
-    printf("hit 1\n");
-    size_t rv;
-    uint8_t buf[0x4000];
-    uint8_t *vstr;
-    unsigned i, j;
-    printf("hit 2\n");
-    const struct mach_header *hdr = (struct mach_header *)buf;
-    FHANDLE fd = INVALID_HANDLE;
-    const uint8_t *q;
-    addr_t min = -1;
-    addr_t max = 0;
-    int is64 = 0;
-    printf("hit 3\n");
-
-    if (filename == NULL) {
-#ifdef __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__
-        rv = kread(base, buf, sizeof(buf));
-        if (rv != sizeof(buf) || !MACHO(buf)) {
-            return -1;
-        }
-#else
-        (void)base;
-        return -1;
-#endif
-    } else {
-        printf("hit 4\n");
-        fd = OPEN(filename, O_RDONLY);
-        if (fd == INVALID_HANDLE) {
-            return -1;
-        }
-        rv = READ(fd, buf, sizeof(buf));
-        if (rv != sizeof(buf) || !MACHO(buf)) {
-            printf("hit 5\n");
-            CLOSE(fd);
-            return -1;
-        }
-        printf("hit 6\n");
-    }
-    
-    printf("hit 7\n");
-
-    if (IS64(buf)) {
-        is64 = 4;
-    }
-    
-    printf("hit 8\n");
-
-
-    q = buf + sizeof(struct mach_header) + is64;
-    printf("hit 9\n");
-
-    for (i = 0; i < hdr->ncmds; i++) {
-        const struct load_command *cmd = (struct load_command *)q;
-        printf("hit 10\n");
-
-        if (cmd->cmd == LC_SEGMENT_64 && ((struct segment_command_64 *)q)->vmsize) {
-            printf("hit 11\n");
-
-            const struct segment_command_64 *seg = (struct segment_command_64 *)q;
-            if (min > seg->vmaddr) {
-                min = seg->vmaddr;
-            }
-            if (max < seg->vmaddr + seg->vmsize) {
-                max = seg->vmaddr + seg->vmsize;
-            }
-            if (!strcmp(seg->segname, "__TEXT_EXEC")) {
-                xnucore_base = seg->vmaddr;
-                xnucore_size = seg->filesize;
-            }
-            if (!strcmp(seg->segname, "__PLK_TEXT_EXEC")) {
-                prelink_base = seg->vmaddr;
-                prelink_size = seg->filesize;
-            }
-            if (!strcmp(seg->segname, "__PPLTEXT")) {
-                pplcode_base = seg->vmaddr;
-                pplcode_size = seg->filesize;
-            }
-            if (!strcmp(seg->segname, "__TEXT")) {
-                const struct section_64 *sec = (struct section_64 *)(seg + 1);
-                for (j = 0; j < seg->nsects; j++) {
-                    if (!strcmp(sec[j].sectname, "__cstring")) {
-                        cstring_base = sec[j].addr;
-                        cstring_size = sec[j].size;
-                    }
-                }
-            }
-            if (!strcmp(seg->segname, "__PRELINK_TEXT")) {
-                const struct section_64 *sec = (struct section_64 *)(seg + 1);
-                for (j = 0; j < seg->nsects; j++) {
-                    if (!strcmp(sec[j].sectname, "__text")) {
-                        pstring_base = sec[j].addr;
-                        pstring_size = sec[j].size;
-                    }
-                }
-            }
-        }
-        printf("hit 12\n");
-        if (cmd->cmd == LC_UNIXTHREAD) {
-            uint32_t *ptr = (uint32_t *)(cmd + 1);
-            uint32_t flavor = ptr[0];
-            struct {
-                uint64_t x[29];	/* General purpose registers x0-x28 */
-                uint64_t fp;	/* Frame pointer x29 */
-                uint64_t lr;	/* Link register x30 */
-                uint64_t sp;	/* Stack pointer x31 */
-                uint64_t pc; 	/* Program counter */
-                uint32_t cpsr;	/* Current program status register */
-            } *thread = (void *)(ptr + 2);
-            if (flavor == 6) {
-                kernel_entry = thread->pc;
-            }
-        }
-        printf("hit 13\n");
-        q = q + cmd->cmdsize;
-    }
-
-    printf("hit 14\n");
-    if (pstring_base == 0 && pstring_size == 0) {
-        pstring_base = cstring_base;
-        pstring_size = cstring_size;
-    }
-    if (prelink_base == 0 && prelink_size == 0) {
-        prelink_base = xnucore_base;
-        prelink_size = xnucore_size;
-    }
-
-    kerndumpbase = min;
-    xnucore_base -= kerndumpbase;
-    prelink_base -= kerndumpbase;
-    pplcode_base -= kerndumpbase;
-    cstring_base -= kerndumpbase;
-    pstring_base -= kerndumpbase;
-    kernel_size = max - min;
-
-    if (filename == NULL) {
-#ifdef __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__
-        kernel = malloc(kernel_size);
-        if (!kernel) {
-            return -1;
-        }
-        rv = kread(kerndumpbase, kernel, kernel_size);
-        if (rv != kernel_size) {
-            free(kernel);
-            kernel = NULL;
-            return -1;
-        }
-
-        kernel_mh = kernel + base - min;
-#endif
-    } else {
-        kernel = calloc(1, kernel_size);
-        if (!kernel) {
-            CLOSE(fd);
-            return -1;
-        }
-
-        q = buf + sizeof(struct mach_header) + is64;
-        for (i = 0; i < hdr->ncmds; i++) {
-            const struct load_command *cmd = (struct load_command *)q;
-            if (cmd->cmd == LC_SEGMENT_64) {
-                const struct segment_command_64 *seg = (struct segment_command_64 *)q;
-                size_t sz = PREAD(fd, kernel + seg->vmaddr - min, seg->filesize, seg->fileoff);
-                if (sz != seg->filesize) {
-                    CLOSE(fd);
-                    free(kernel);
-                    kernel = NULL;
-                    return -1;
-                }
-                if (!kernel_mh) {
-                    kernel_mh = kernel + seg->vmaddr - min;
-                }
-                if (!strcmp(seg->segname, "__LINKEDIT")) {
-                    kernel_delta = seg->vmaddr - min - seg->fileoff;
-                }
-            }
-            q = q + cmd->cmdsize;
-        }
-
-        CLOSE(fd);
-    }
-
-    vstr = boyermoore_horspool_memmem(kernel, kernel_size, (uint8_t *)"Darwin Kernel Version", sizeof("Darwin Kernel Version") - 1);
-    if (vstr) {
-        kernel_version = atoi((const char *)vstr + sizeof("Darwin Kernel Version"));
-    }
-    
-    printf("hit 15\n");
-    
-    find_sbops();
-    
-    printf("hit 16\n");
-
-    return 0;
-}
-
-void
-term_kernel(void)
-{
-    free(kernel);
-}
-
 /* these operate on VA ******************************************************/
 
 #define INSN_RETAB  0xD65F0FFF, 0xFFFFFFFF
@@ -1564,6 +1280,290 @@ find_symbol(const char *symbol)
         q = q + cmd->cmdsize;
     }
     return 0;
+}
+
+/* kernel iOS10 **************************************************************/
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <mach-o/loader.h>
+//#include "vfs.h" // img4lib
+
+#ifdef __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__
+#include <mach/mach.h>
+size_t kread(uint64_t where, void *p, size_t size);
+#endif
+
+#ifdef VFS_H_included
+#define INVALID_HANDLE NULL
+static FHANDLE
+OPEN(const char *filename, int oflag)
+{
+    ssize_t rv;
+    char buf[28];
+    FHANDLE fd = file_open(filename, oflag);
+    if (!fd) {
+        return NULL;
+    }
+    rv = fd->read(fd, buf, 4);
+    fd->lseek(fd, 0, SEEK_SET);
+    if (rv == 4 && !MACHO(buf)) {
+        fd = img4_reopen(fd, NULL, 0);
+        if (!fd) {
+            return NULL;
+        }
+        rv = fd->read(fd, buf, sizeof(buf));
+        if (rv == sizeof(buf) && *(uint32_t *)buf == 0xBEBAFECA && __builtin_bswap32(*(uint32_t *)(buf + 4)) > 0) {
+            return sub_reopen(fd, __builtin_bswap32(*(uint32_t *)(buf + 16)), __builtin_bswap32(*(uint32_t *)(buf + 20)));
+        }
+        fd->lseek(fd, 0, SEEK_SET);
+    }
+    return fd;
+}
+#define CLOSE(fd) (fd)->close(fd)
+#define READ(fd, buf, sz) (fd)->read(fd, buf, sz)
+static ssize_t
+PREAD(FHANDLE fd, void *buf, size_t count, off_t offset)
+{
+    ssize_t rv;
+    //off_t pos = fd->lseek(FHANDLE fd, 0, SEEK_CUR);
+    fd->lseek(fd, offset, SEEK_SET);
+    rv = fd->read(fd, buf, count);
+    //fd->lseek(FHANDLE fd, pos, SEEK_SET);
+    return rv;
+}
+#else
+#define FHANDLE int
+#define INVALID_HANDLE -1
+#define OPEN open
+#define CLOSE close
+#define READ read
+#define PREAD pread
+#endif
+
+static uint8_t *kernel = NULL;
+static int kernel_version = 0;
+static size_t kernel_size = 0;
+
+static addr_t xnucore_base = 0;
+static addr_t xnucore_size = 0;
+static addr_t prelink_base = 0;
+static addr_t prelink_size = 0;
+static addr_t pplcode_base = 0;
+static addr_t pplcode_size = 0;
+static addr_t cstring_base = 0;
+static addr_t cstring_size = 0;
+static addr_t pstring_base = 0;
+static addr_t pstring_size = 0;
+static addr_t kerndumpbase = -1;
+static addr_t kernel_entry = 0;
+static void *kernel_mh = 0;
+static addr_t kernel_delta = 0;
+
+int
+init_kernel(addr_t base, char *filename)
+{
+    printf("hit 1\n");
+    size_t rv;
+    uint8_t buf[0x4000];
+    uint8_t *vstr;
+    unsigned i, j;
+    printf("hit 2\n");
+    const struct mach_header *hdr = (struct mach_header *)buf;
+    FHANDLE fd = INVALID_HANDLE;
+    const uint8_t *q;
+    addr_t min = -1;
+    addr_t max = 0;
+    int is64 = 0;
+    printf("hit 3\n");
+
+    if (filename == NULL) {
+#ifdef __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__
+        rv = kread(base, buf, sizeof(buf));
+        if (rv != sizeof(buf) || !MACHO(buf)) {
+            return -1;
+        }
+#else
+        (void)base;
+        return -1;
+#endif
+    } else {
+        printf("hit 4\n");
+        fd = OPEN(filename, O_RDONLY);
+        if (fd == INVALID_HANDLE) {
+            return -1;
+        }
+        rv = READ(fd, buf, sizeof(buf));
+        if (rv != sizeof(buf) || !MACHO(buf)) {
+            printf("hit 5\n");
+            CLOSE(fd);
+            return -1;
+        }
+        printf("hit 6\n");
+    }
+    
+    printf("hit 7\n");
+
+    if (IS64(buf)) {
+        is64 = 4;
+    }
+    
+    printf("hit 8\n");
+
+
+    q = buf + sizeof(struct mach_header) + is64;
+    printf("hit 9\n");
+
+    for (i = 0; i < hdr->ncmds; i++) {
+        const struct load_command *cmd = (struct load_command *)q;
+        printf("hit 10\n");
+
+        if (cmd->cmd == LC_SEGMENT_64 && ((struct segment_command_64 *)q)->vmsize) {
+            printf("hit 11\n");
+
+            const struct segment_command_64 *seg = (struct segment_command_64 *)q;
+            if (min > seg->vmaddr) {
+                min = seg->vmaddr;
+            }
+            if (max < seg->vmaddr + seg->vmsize) {
+                max = seg->vmaddr + seg->vmsize;
+            }
+            if (!strcmp(seg->segname, "__TEXT_EXEC")) {
+                xnucore_base = seg->vmaddr;
+                xnucore_size = seg->filesize;
+            }
+            if (!strcmp(seg->segname, "__PLK_TEXT_EXEC")) {
+                prelink_base = seg->vmaddr;
+                prelink_size = seg->filesize;
+            }
+            if (!strcmp(seg->segname, "__PPLTEXT")) {
+                pplcode_base = seg->vmaddr;
+                pplcode_size = seg->filesize;
+            }
+            if (!strcmp(seg->segname, "__TEXT")) {
+                const struct section_64 *sec = (struct section_64 *)(seg + 1);
+                for (j = 0; j < seg->nsects; j++) {
+                    if (!strcmp(sec[j].sectname, "__cstring")) {
+                        cstring_base = sec[j].addr;
+                        cstring_size = sec[j].size;
+                    }
+                }
+            }
+            if (!strcmp(seg->segname, "__PRELINK_TEXT")) {
+                const struct section_64 *sec = (struct section_64 *)(seg + 1);
+                for (j = 0; j < seg->nsects; j++) {
+                    if (!strcmp(sec[j].sectname, "__text")) {
+                        pstring_base = sec[j].addr;
+                        pstring_size = sec[j].size;
+                    }
+                }
+            }
+        }
+        printf("hit 12\n");
+        if (cmd->cmd == LC_UNIXTHREAD) {
+            uint32_t *ptr = (uint32_t *)(cmd + 1);
+            uint32_t flavor = ptr[0];
+            struct {
+                uint64_t x[29];	/* General purpose registers x0-x28 */
+                uint64_t fp;	/* Frame pointer x29 */
+                uint64_t lr;	/* Link register x30 */
+                uint64_t sp;	/* Stack pointer x31 */
+                uint64_t pc; 	/* Program counter */
+                uint32_t cpsr;	/* Current program status register */
+            } *thread = (void *)(ptr + 2);
+            if (flavor == 6) {
+                kernel_entry = thread->pc;
+            }
+        }
+        printf("hit 13\n");
+        q = q + cmd->cmdsize;
+    }
+
+    printf("hit 14\n");
+    if (pstring_base == 0 && pstring_size == 0) {
+        pstring_base = cstring_base;
+        pstring_size = cstring_size;
+    }
+    if (prelink_base == 0 && prelink_size == 0) {
+        prelink_base = xnucore_base;
+        prelink_size = xnucore_size;
+    }
+
+    kerndumpbase = min;
+    xnucore_base -= kerndumpbase;
+    prelink_base -= kerndumpbase;
+    pplcode_base -= kerndumpbase;
+    cstring_base -= kerndumpbase;
+    pstring_base -= kerndumpbase;
+    kernel_size = max - min;
+
+    if (filename == NULL) {
+#ifdef __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__
+        kernel = malloc(kernel_size);
+        if (!kernel) {
+            return -1;
+        }
+        rv = kread(kerndumpbase, kernel, kernel_size);
+        if (rv != kernel_size) {
+            free(kernel);
+            kernel = NULL;
+            return -1;
+        }
+
+        kernel_mh = kernel + base - min;
+#endif
+    } else {
+        kernel = calloc(1, kernel_size);
+        if (!kernel) {
+            CLOSE(fd);
+            return -1;
+        }
+
+        q = buf + sizeof(struct mach_header) + is64;
+        for (i = 0; i < hdr->ncmds; i++) {
+            const struct load_command *cmd = (struct load_command *)q;
+            if (cmd->cmd == LC_SEGMENT_64) {
+                const struct segment_command_64 *seg = (struct segment_command_64 *)q;
+                size_t sz = PREAD(fd, kernel + seg->vmaddr - min, seg->filesize, seg->fileoff);
+                if (sz != seg->filesize) {
+                    CLOSE(fd);
+                    free(kernel);
+                    kernel = NULL;
+                    return -1;
+                }
+                if (!kernel_mh) {
+                    kernel_mh = kernel + seg->vmaddr - min;
+                }
+                if (!strcmp(seg->segname, "__LINKEDIT")) {
+                    kernel_delta = seg->vmaddr - min - seg->fileoff;
+                }
+            }
+            q = q + cmd->cmdsize;
+        }
+
+        CLOSE(fd);
+    }
+
+    vstr = boyermoore_horspool_memmem(kernel, kernel_size, (uint8_t *)"Darwin Kernel Version", sizeof("Darwin Kernel Version") - 1);
+    if (vstr) {
+        kernel_version = atoi((const char *)vstr + sizeof("Darwin Kernel Version"));
+    }
+    
+    printf("hit 15\n");
+    
+    find_sbops();
+    
+    printf("hit 16\n");
+
+    return 0;
+}
+
+void
+term_kernel(void)
+{
+    free(kernel);
 }
 
 /* test **********************************************************************/
