@@ -981,9 +981,11 @@ find_sbops(void)
     
     ref = *(ref + 3);
     
-    uint64_t xref_stuff = ref - kerndumpbase;
+    uint64_t xref_stuff = ref;
     
-    printf("%s: Found \"Seatbelt sandbox policy\" loc at %o\n",__FUNCTION__,xref_stuff);
+    xref_stuff = xref_stuff - kerndumpbase;
+    
+    printf("%s: Found \"Seatbelt sandbox policy\" loc at %o\n",__FUNCTION__,(void*)(xref_stuff));
     
     return xref_stuff;
 }
