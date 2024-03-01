@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "sbops.h"
+
 #include "patchfinder64.c"
 
 #define GET_OFFSET(kernel_len, x) (x - (uintptr_t) kernel_buf)
@@ -217,6 +219,119 @@ int get_PE_i_can_has_debugger_patch_ios9(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 8 arm64
+int get_sbops_patch_ios8(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    
+    const char sbops[] = "Seatbelt sandbox policy";
+    void* ent_loc = memmem(kernel_buf, kernel_len, sbops, sizeof(sbops) / sizeof(*sbops));
+    if(!ent_loc) {
+        printf("%s: Could not find \"Seatbelt sandbox policy\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"Seatbelt sandbox policy\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t strAddress = (addr_t)GET_OFFSET(kernel_len,ent_loc);
+    addr_t xref_stuff = memmem(kernel_buf, kernel_len, &strAddress, sizeof(strAddress));
+    if(!xref_stuff) {
+        printf("%s: Could not find \"Seatbelt sandbox policy\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"Seatbelt sandbox policy\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    
+    xref_stuff = *(xref_stuff + 3);
+    
+    printf("%s: Found \"Seatbelt sandbox policy\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    
+    printf("%s: Patching \"mpo_file_check_mmap\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_file_check_mmap)));
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_file_check_mmap)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_rename)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_rename)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_access)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_chroot)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_create)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_deleteextattr)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_exchangedata)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_exec)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_getattrlist)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_getextattr)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_ioctl)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_link)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_listextattr)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_open)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_readlink)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setattrlist)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setextattr)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setflags)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setmode)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setowner)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setutimes)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setutimes)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_stat)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_truncate)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_unlink)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_notify_create)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_fsgetpath)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_getattr)) = 0x0;
+    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_mount_check_stat)) = 0x0;
+    
+    #uint64_t find_sbops(uint64_t region, uint8_t* kdata, size_t ksize)
+    #{
+    #    const char sbops[] = "Seatbelt sandbox policy";
+    #    
+    #    uint8_t *sbops_offset = memmem(kdata, ksize, sbops, sizeof(sbops) / sizeof(*sbops));
+    #    if (!sbops_offset)
+    #        return 0;
+    #    uint64_t strAddress = (uintptr_t)sbops_offset - (uintptr_t)kdata + region;
+    #    uint64_t* ref = memmem(kdata, ksize, &strAddress, sizeof(strAddress));
+    #    if (!ref)
+    #        return 0;
+    #    
+    #    uint64_t sandbox_mac_policy_ops_ptr = *(ref + 3);
+    #    return sandbox_mac_policy_ops_ptr - region;
+    #}
+    
+    #/* patch le sandbox */
+    #Log(@"[i] Patching SBOPS...");
+    
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_file_check_mmap),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_rename),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_rename),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_access),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_chroot),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_create),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_deleteextattr),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_exchangedata),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_exec),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_getattrlist),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_getextattr),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_ioctl),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_link),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_listextattr),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_open),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_readlink),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setattrlist),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setextattr),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setflags),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setmode),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setowner),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setutimes),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_setutimes),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_stat),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_truncate),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_unlink),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_notify_create),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_fsgetpath),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_vnode_check_getattr),0);
+    #wk64(patchfinderaddress(PFIND_ADDR_SBOPS)+offsetof(struct mac_policy_ops, mpo_mount_check_stat),0);
+    
+    #void wk64(uint64_t where, uint64_t what) {
+    #    uint64_t _what = what;
+    #    kwrite(where, &_what, sizeof(uint64_t));
+    #}
+    
+    return 0;
+}
+
 int main(int argc, char **argv) {
     
     printf("%s: Starting...\n", __FUNCTION__);
@@ -228,6 +343,7 @@ int main(int argc, char **argv) {
         printf("\t-m\t\tPatch mount_common (iOS 7& 8 Only)\n");
         printf("\t-e\t\tPatch vm_map_enter (iOS 7& 8 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
+        printf("\t-s\t\tPatch sandbox (iOS 8 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         return 0;
