@@ -231,8 +231,7 @@ int get_sbops_patch_ios8(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"Seatbelt sandbox policy\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t strAddress = (addr_t)GET_OFFSET(kernel_len,ent_loc);
-    addr_t xref_stuff = memmem(kernel_buf, kernel_len, &strAddress, sizeof(strAddress));
+    addr_t xref_stuff = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
     if(!xref_stuff) {
         printf("%s: Could not find \"Seatbelt sandbox policy\" xref\n",__FUNCTION__);
         return -1;
