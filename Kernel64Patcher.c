@@ -375,8 +375,6 @@ int main(int argc, char **argv) {
         }
     }
     
-    term_kernel();
-    
     /* Write patched kernel */
     printf("%s: Writing out patched file to %s...\n", __FUNCTION__, argv[2]);
     

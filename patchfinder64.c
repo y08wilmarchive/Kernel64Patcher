@@ -970,7 +970,6 @@ find_sbops(void)
         printf("%s: Could not find \"Seatbelt sandbox policy\" string\n",__FUNCTION__);
         return -1;
     }
-    uint64_t region = 0x0;
     uint64_t strAddress = (uintptr_t) ent_loc - (uintptr_t) kernel + kerndumpbase;
     printf("%s: Found \"Seatbelt sandbox policy\" str loc at %p\n",__FUNCTION__,strAddress);
     uint64_t* ref = memmem(kernel, kernel_size, &strAddress, sizeof(strAddress));
@@ -985,6 +984,8 @@ find_sbops(void)
     uint64_t xref_stuff = ref - kerndumpbase;
     
     printf("%s: Found \"sbops\" loc at %o\n",__FUNCTION__,xref_stuff);
+
+    term_kernel();
     
     return xref_stuff;
 }
