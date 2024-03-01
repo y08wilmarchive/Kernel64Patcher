@@ -527,7 +527,7 @@ static addr_t kernel_delta = 0;
 int
 init_kernel(addr_t base, char *filename)
 {
-    printf("hit 1");
+    printf("hit 1\n");
     size_t rv;
     uint8_t buf[0x4000];
     uint8_t *vstr;
