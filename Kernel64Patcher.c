@@ -331,15 +331,6 @@ int main(int argc, char **argv) {
         memmove(kernel_buf,kernel_buf+28,kernel_len);
     }
     
-    addr_t base = 0;
-    init_kernel(base, argv[1]);
-    
-    addr_t sbops = find_sbops();
-    
-    printf("sbops = 0x%llx\n", sbops);
-
-    term_kernel();
-    
     for(int i=0;i<argc;i++) {
         if(strcmp(argv[i], "-e") == 0) {
             printf("Kernel: Adding vm_map_enter patch...\n");
