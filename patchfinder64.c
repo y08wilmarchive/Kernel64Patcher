@@ -715,7 +715,7 @@ init_kernel(addr_t base, char *filename)
     
     printf("hit 15\n");
     
-    find_sbops()
+    find_sbops();
     
     printf("hit 16\n");
 
