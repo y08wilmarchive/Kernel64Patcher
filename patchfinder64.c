@@ -527,16 +527,19 @@ static addr_t kernel_delta = 0;
 int
 init_kernel(addr_t base, const char *filename)
 {
+    printf("hit 1");
     size_t rv;
     uint8_t buf[0x4000];
     uint8_t *vstr;
     unsigned i, j;
+    printf("hit 2");
     const struct mach_header *hdr = (struct mach_header *)buf;
     FHANDLE fd = INVALID_HANDLE;
     const uint8_t *q;
     addr_t min = -1;
     addr_t max = 0;
     int is64 = 0;
+    printf("hit 3");
 
     if (filename == NULL) {
 #ifdef __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__
@@ -549,25 +552,39 @@ init_kernel(addr_t base, const char *filename)
         return -1;
 #endif
     } else {
+        printf("hit 4");
         fd = OPEN(filename, O_RDONLY);
         if (fd == INVALID_HANDLE) {
             return -1;
         }
         rv = READ(fd, buf, sizeof(buf));
         if (rv != sizeof(buf) || !MACHO(buf)) {
+            printf("hit 5");
             CLOSE(fd);
             return -1;
         }
+        printf("hit 6");
     }
+    
+        printf("hit 7");
 
     if (IS64(buf)) {
         is64 = 4;
     }
+    
+        printf("hit 8");
+
 
     q = buf + sizeof(struct mach_header) + is64;
+        printf("hit 9");
+
     for (i = 0; i < hdr->ncmds; i++) {
         const struct load_command *cmd = (struct load_command *)q;
+            printf("hit 10");
+
         if (cmd->cmd == LC_SEGMENT_64 && ((struct segment_command_64 *)q)->vmsize) {
+                printf("hit 11");
+
             const struct segment_command_64 *seg = (struct segment_command_64 *)q;
             if (min > seg->vmaddr) {
                 min = seg->vmaddr;
@@ -606,6 +623,21 @@ init_kernel(addr_t base, const char *filename)
                 }
             }
         }
+        if (cmd->cmd == LC_UNIXTHREAD) {
+            uint32_t *ptr = (uint32_t *)(cmd + 1);
+            uint32_t flavor = ptr[0];
+            struct {
+                uint64_t x[29];	/* General purpose registers x0-x28 */
+                uint64_t fp;	/* Frame pointer x29 */
+                uint64_t lr;	/* Link register x30 */
+                uint64_t sp;	/* Stack pointer x31 */
+                uint64_t pc; 	/* Program counter */
+                uint32_t cpsr;	/* Current program status register */
+            } *thread = (void *)(ptr + 2);
+            if (flavor == 6) {
+                kernel_entry = thread->pc;
+            }
+        }
         q = q + cmd->cmdsize;
     }
 
@@ -625,6 +657,58 @@ init_kernel(addr_t base, const char *filename)
     cstring_base -= kerndumpbase;
     pstring_base -= kerndumpbase;
     kernel_size = max - min;
+
+    if (filename == NULL) {
+#ifdef __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__
+        kernel = malloc(kernel_size);
+        if (!kernel) {
+            return -1;
+        }
+        rv = kread(kerndumpbase, kernel, kernel_size);
+        if (rv != kernel_size) {
+            free(kernel);
+            kernel = NULL;
+            return -1;
+        }
+
+        kernel_mh = kernel + base - min;
+#endif
+    } else {
+        kernel = calloc(1, kernel_size);
+        if (!kernel) {
+            CLOSE(fd);
+            return -1;
+        }
+
+        q = buf + sizeof(struct mach_header) + is64;
+        for (i = 0; i < hdr->ncmds; i++) {
+            const struct load_command *cmd = (struct load_command *)q;
+            if (cmd->cmd == LC_SEGMENT_64) {
+                const struct segment_command_64 *seg = (struct segment_command_64 *)q;
+                size_t sz = PREAD(fd, kernel + seg->vmaddr - min, seg->filesize, seg->fileoff);
+                if (sz != seg->filesize) {
+                    CLOSE(fd);
+                    free(kernel);
+                    kernel = NULL;
+                    return -1;
+                }
+                if (!kernel_mh) {
+                    kernel_mh = kernel + seg->vmaddr - min;
+                }
+                if (!strcmp(seg->segname, "__LINKEDIT")) {
+                    kernel_delta = seg->vmaddr - min - seg->fileoff;
+                }
+            }
+            q = q + cmd->cmdsize;
+        }
+
+        CLOSE(fd);
+    }
+
+    vstr = boyermoore_horspool_memmem(kernel, kernel_size, (uint8_t *)"Darwin Kernel Version", sizeof("Darwin Kernel Version") - 1);
+    if (vstr) {
+        kernel_version = atoi((const char *)vstr + sizeof("Darwin Kernel Version"));
+    }
 
     return 0;
 }
