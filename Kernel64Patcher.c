@@ -255,11 +255,12 @@ int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"mapIO_patch\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t* xref_stuff = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_b_unconditional_64);
+    addr_t xref_stuff = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_b_unconditional_64);
     if(!xref_stuff) {
         printf("%s: Could not find \"mapIO_patch\" xref\n",__FUNCTION__);
         return -1;
     }
+    xref_stuff = (addr_t)GET_OFFSET(kernel_len, xref_stuff);
     printf("%s: Found \"mapIO_patch\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     printf("%s: Patching \"mapIO_patch\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0xD503201F is nop
