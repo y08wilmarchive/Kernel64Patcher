@@ -220,7 +220,7 @@ int get_PE_i_can_has_debugger_patch_ios9(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
-uint32_t find_next_insn_matching_64(uint64_t region, uint8_t* kdata, size_t ksize, uint32_t current_instruction, int (*match_func)(uint32_t*))
+uint32_t* find_next_insn_matching_64(uint64_t region, uint8_t* kdata, size_t ksize, uint32_t* current_instruction, int (*match_func)(uint32_t*))
 {
     while((uintptr_t)current_instruction < (uintptr_t)kdata + ksize - 4) {
         current_instruction++;
@@ -255,7 +255,7 @@ int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"mapIO_patch\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_b_unconditional_64);
+    addr_t* xref_stuff = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_b_unconditional_64);
     if(!xref_stuff) {
         printf("%s: Could not find \"mapIO_patch\" xref\n",__FUNCTION__);
         return -1;
