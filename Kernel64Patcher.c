@@ -343,7 +343,7 @@ int main(int argc, char **argv) {
         printf("\t-m\t\tPatch mount_common (iOS 7& 8 Only)\n");
         printf("\t-e\t\tPatch vm_map_enter (iOS 7& 8 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
-        printf("\t-s\t\tPatch sandbox (iOS 8 Only)\n");
+        printf("\t-b\t\tPatch sandbox (iOS 8 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         return 0;
@@ -396,6 +396,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-s") == 0) {
             printf("Kernel: Adding PE_i_can_has_debugger patch...\n");
             get_PE_i_can_has_debugger_patch_ios8(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-b") == 0) {
+            printf("Kernel: Adding sandbox patch...\n");
+            get_sbops_patch_ios8(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-n") == 0) {
             printf("Kernel: Adding NoMoreSIGABRT patch...\n");
