@@ -981,7 +981,7 @@ find_sbops(void)
     
     ref = *(ref + 3);
     
-    uint64_t xref_stuff = ref;
+    addr_t xref_stuff = (addr_t)ref;
     
     //xref_stuff = xref_stuff - kerndumpbase;
     
