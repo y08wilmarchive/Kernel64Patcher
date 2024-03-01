@@ -285,7 +285,7 @@ int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_tbnz_w32);
+    addr_t xref_stuff = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, GET_OFFSET(kernel_len,ent_loc, insn_is_tbnz_w32);
     if(!xref_stuff) {
         printf("%s: Could not find \"vm_fault_enter\" xref\n",__FUNCTION__);
         return -1;
