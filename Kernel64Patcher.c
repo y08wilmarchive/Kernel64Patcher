@@ -157,14 +157,46 @@ int get_undo_NoMoreSIGABRT_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
-// arm64
-int get_PE_i_can_has_debugger_patch_ios8_ios9(void* kernel_buf,size_t kernel_len) {
+// iOS 8 arm64
+int get_PE_i_can_has_debugger_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
-    // search 08 00 00 B9 02 00 00 14 1F 00 00 B9
+    // search 08 00 00 B9 02 00 00 14 1F 00 00 B9 1F 20 03 D5 1F 20 03 D5
     // str w8, [x0]
     // b 0xffffff80024162e4
     // str wzr, [x0]
-    uint8_t search[] = { 0x08, 0x00, 0x00, 0xB9, 0x02, 0x00, 0x00, 0x14, 0x1F, 0x00, 0x00, 0xB9 };
+    // nop
+    // nop
+    uint8_t search[] = { 0x08, 0x00, 0x00, 0xB9, 0x02, 0x00, 0x00, 0x14, 0x1F, 0x00, 0x00, 0xB9, 0x1F, 0x20, 0x03, 0xD5, 0x1F, 0x20, 0x03, 0xD5 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"PE_i_can_has_debugger\" patch\n",__FUNCTION__);
+        printf("%s: Trying a more recent \"PE_i_can_has_debugger\" patch\n",__FUNCTION__);
+        return get_PE_i_can_has_debugger_patch_ios9(kernel_buf,kernel_len);
+    }
+    printf("%s: Found \"PE_i_can_has_debugger\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    // loc starts at str w8, [x0], we can add +0x4 to go a line forward and -0x4 to go back
+    printf("%s: Found \"PE_i_can_has_debugger\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0x1F 0x20 0x03 0xD5 for near top of sandbox patch at cbz w8, ...
+    // 0x20 0x00 0x80 0x52 for bottom of sandbox patch at ldr w0, data_ ...
+    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff - 0x4 - 0x4 - 0x4 - 0x4));
+    // 0xD503201F is nop for cbz
+    *(uint32_t *) (kernel_buf + xref_stuff - 0x4 - 0x4 - 0x4 - 0x4) = 0xD503201F;
+    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff + 0x4 + 0x4 + 0x4 + 0x4 + 0x4));
+    // 0x0x52800020 is mov w0, 0x1 to make the func return 1 always
+    *(uint32_t *) (kernel_buf + xref_stuff + 0x4 + 0x4 + 0x4 + 0x4 + 0x4) = 0x52800020;
+    return 0;
+}
+
+// iOS 9 arm64
+int get_PE_i_can_has_debugger_patch_ios9(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search 08 00 00 B9 02 00 00 14 1F 00 00 B9 1F 20 03 D5
+    // str w8, [x0]
+    // b 0xffffff80024162e4
+    // str wzr, [x0]
+    // nop
+    uint8_t search[] = { 0x08, 0x00, 0x00, 0xB9, 0x02, 0x00, 0x00, 0x14, 0x1F, 0x00, 0x00, 0xB9, 0x1F, 0x20, 0x03, 0xD5 };
     void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
     if (!ent_loc) {
         printf("%s: Could not find \"PE_i_can_has_debugger\" patch\n",__FUNCTION__);
@@ -174,12 +206,14 @@ int get_PE_i_can_has_debugger_patch_ios8_ios9(void* kernel_buf,size_t kernel_len
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
     // loc starts at str w8, [x0], we can add +0x4 to go a line forward and -0x4 to go back
     printf("%s: Found \"PE_i_can_has_debugger\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    // 0x28 0x00 0x80 0x52 for top of sandbox patch at ldr w8, data_ ...
+    // 0x1F 0x20 0x03 0xD5 for near top of sandbox patch at cbz w8, ...
     // 0x20 0x00 0x80 0x52 for bottom of sandbox patch at ldr w0, data_ ...
-    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff - 0x4 - 0x4 - 0x4 - 0x4 - 0x4));
-    *(uint32_t *) (kernel_buf + xref_stuff - 0x4 - 0x4 - 0x4 - 0x4 - 0x4) = 0x52800028;
-    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff + 0x4 + 0x4 + 0x4 + 0x4 + 0x4));
-    *(uint32_t *) (kernel_buf + xref_stuff + 0x4 + 0x4 + 0x4 + 0x4 + 0x4) = 0x52800020;
+    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff - 0x4 - 0x4 - 0x4 - 0x4));
+    // 0xD503201F is nop for cbz
+    *(uint32_t *) (kernel_buf + xref_stuff - 0x4 - 0x4 - 0x4 - 0x4) = 0xD503201F;
+    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff + 0x4 + 0x4 + 0x4 + 0x4));
+    // 0x0x52800020 is mov w0, 0x1 to make the func return 1 always
+    *(uint32_t *) (kernel_buf + xref_stuff + 0x4 + 0x4 + 0x4 + 0x4) = 0x52800020;
     return 0;
 }
 
@@ -245,7 +279,7 @@ int main(int argc, char **argv) {
         }
         if(strcmp(argv[i], "-s") == 0) {
             printf("Kernel: Adding PE_i_can_has_debugger patch...\n");
-            get_PE_i_can_has_debugger_patch_ios8_ios9(kernel_buf,kernel_len);
+            get_PE_i_can_has_debugger_patch_ios8(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-n") == 0) {
             printf("Kernel: Adding NoMoreSIGABRT patch...\n");
