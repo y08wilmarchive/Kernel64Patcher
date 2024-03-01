@@ -333,11 +333,8 @@ int main(int argc, char **argv) {
         memmove(kernel_buf,kernel_buf+28,kernel_len);
     }
     
-    int rv;
     addr_t base = 0;
-    const addr_t vm_kernel_slide = 0;
-    rv = init_kernel(base, (argc > 1) ? argv[1] : "krnl");
-    assert(rv == 0);
+    init_kernel(base, argv[1]);
     
     addr_t sbops = find_sbops();
     
