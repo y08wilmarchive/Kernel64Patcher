@@ -220,7 +220,7 @@ int get_PE_i_can_has_debugger_patch_ios9(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
-// iOS 8 arm64
+// iOS 8 arm64, this patch is broken atm pls fix
 int get_sbops_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     uint64_t xref_stuff = find_sbops();
@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
         printf("\t-m\t\tPatch mount_common (iOS 7& 8 Only)\n");
         printf("\t-e\t\tPatch vm_map_enter (iOS 7& 8 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
-        printf("\t-b\t\tPatch sandbox (iOS 8 Only)\n");
+        printf("\t-b\t\tPatch sandbox (iOS 8 Only, broken atm)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         return 0;
