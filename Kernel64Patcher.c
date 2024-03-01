@@ -220,7 +220,7 @@ int get_PE_i_can_has_debugger_patch_ios9(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
-uint32_t find_next_insn_matching_64(uint64_t region, uint8_t* kdata, size_t ksize, uint32_t* current_instruction, int (*match_func)(uint32_t*))
+uint32_t find_next_insn_matching_64(uint64_t region, uint8_t* kdata, size_t ksize, uint32_t current_instruction, int (*match_func)(uint32_t*))
 {
     while((uintptr_t)current_instruction < (uintptr_t)kdata + ksize - 4) {
         current_instruction++;
