@@ -220,6 +220,53 @@ int get_PE_i_can_has_debugger_patch_ios9(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+uint32_t* find_next_insn_matching_64(uint64_t region, uint8_t* kdata, size_t ksize, uint32_t* current_instruction, int (*match_func)(uint32_t*))
+{
+    while((uintptr_t)current_instruction < (uintptr_t)kdata + ksize - 4) {
+        current_instruction++;
+        
+        if(match_func(current_instruction)) {
+            return current_instruction;
+        }
+    }
+    
+    return NULL;
+}
+
+__unused static int insn_is_b_unconditional_64(uint32_t* i)
+{
+    if ((*i & 0xfc000000) == 0x14000000)
+        return 1;
+    else
+        return 0;
+}
+
+// iOS 8 arm64
+int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
+    // search 00 00 BC 52 40 58 80 72 00 08 00 11
+    //MOV             W0, #0xE0000000
+    //MOVK            W0, #0x2C2
+    //ADD             W0, W0, #2
+    uint8_t search[] = { 0x00, 0x00, 0xBC, 0x52, 0x40, 0x58, 0x80, 0x72, 0x00, 0x08, 0x00, 0x11 };
+
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"mapIO_patch\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"mapIO_patch\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    uint8_t *xref_stuff = (uint8_t *)find_next_insn_matching_64(0, kernel_buf, kernel_length, insn, insn_is_b_unconditional_64);
+    if(!xref_stuff) {
+        printf("%s: Could not find \"mapIO_patch\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"mapIO_patch\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"mapIO_patch\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F;
+    return 0;
+}
+
 // iOS 8 arm64, this patch is broken atm pls fix
 int get_sbops_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
@@ -303,6 +350,7 @@ int main(int argc, char **argv) {
         printf("\t-m\t\tPatch mount_common (iOS 7& 8 Only)\n");
         printf("\t-e\t\tPatch vm_map_enter (iOS 7& 8 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
+        printf("\t-a\t\tPatch map_IO (iOS 8 Only)\n");
         printf("\t-b\t\tPatch sandbox (iOS 8 Only, broken atm)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
@@ -372,6 +420,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-o") == 0) {
             printf("Kernel: Adding undo NoMoreSIGABRT patch...\n");
             get_undo_NoMoreSIGABRT_patch_ios8(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-a") == 0) {
+            printf("Kernel: Adding map_IO patch...\n");
+            get_mapIO_patch_ios8(kernel_buf,kernel_len);
         }
     }
     
