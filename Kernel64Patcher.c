@@ -224,24 +224,25 @@ int get_PE_i_can_has_debugger_patch_ios9(void* kernel_buf,size_t kernel_len) {
 int get_sbops_patch_ios8(uint8_t* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     
-    const char sbops[] = "Seatbelt sandbox policy";
-    void* ent_loc = memmem(kernel_buf, kernel_len, sbops, sizeof(sbops) / sizeof(*sbops));
-    if(!ent_loc) {
-        printf("%s: Could not find \"Seatbelt sandbox policy\" string\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"Seatbelt sandbox policy\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    uint64_t strAddress = (uintptr_t) ent_loc - (uintptr_t) kernel_buf;
-    uint64_t* ref = memmem(kernel_buf, kernel_len, &strAddress, sizeof(strAddress));
-    if(!ref) {
-        printf("%s: Could not find \"Seatbelt sandbox policy\" xref\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"Seatbelt sandbox policy\" xref at %p\n\n", __FUNCTION__,(void*)(ref));
+    // const char sbops[] = "Seatbelt sandbox policy";
+    // void* ent_loc = memmem(kernel_buf, kernel_len, sbops, sizeof(sbops) / sizeof(*sbops));
+    // if(!ent_loc) {
+    //     printf("%s: Could not find \"Seatbelt sandbox policy\" string\n",__FUNCTION__);
+    //     return -1;
+    // }
+    // printf("%s: Found \"Seatbelt sandbox policy\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    // uint64_t region = 0x0;
+    // uint64_t strAddress = (uintptr_t) ent_loc - (uintptr_t) kernel_buf + region;
+    // uint64_t* ref = memmem(kernel_buf, kernel_len, &strAddress, sizeof(strAddress));
+    // if(!ref) {
+    //     printf("%s: Could not find \"Seatbelt sandbox policy\" xref\n",__FUNCTION__);
+    //     return -1;
+    // }
+    // printf("%s: Found \"Seatbelt sandbox policy\" xref at %p\n\n", __FUNCTION__,(void*)(ref));
+    // 
+    // ref = *(ref + 3);
     
-    ref = *(ref + 3);
-    
-    uint64_t xref_stuff = ref;
+    uint64_t xref_stuff = find_sbops();
     
     printf("%s: Found \"Seatbelt sandbox policy\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     
@@ -329,6 +330,36 @@ int main(int argc, char **argv) {
         printf("%s: Detected fat macho kernel\n",__FUNCTION__);
         memmove(kernel_buf,kernel_buf+28,kernel_len);
     }
+    
+    int rv;
+    addr_t base = 0;
+    const addr_t vm_kernel_slide = 0;
+    rv = init_kernel(base, (argc > 1) ? argv[1] : "krnl");
+    assert(rv == 0);
+
+    addr_t allproc = find_allproc();
+    printf("allproc = 0x%llx\n", allproc);
+    addr_t realhost = find_realhost(find_symbol("_host_priv_self") + vm_kernel_slide);
+    printf("realhost = 0x%llx\n", realhost - vm_kernel_slide);
+
+    addr_t trustcache = find_trustcache();
+    if (!trustcache) {
+        trustcache = find_cache(1);
+    }
+    printf("trustcache = 0x%llx\n", trustcache);
+    addr_t amficache = find_amficache();
+    if (!amficache) {
+        amficache = find_cache(0);
+    }
+    printf("amficache = 0x%llx\n", amficache);
+    
+    addr_t sbops = find_sbops();
+    
+    printf("sbops = 0x%llx\n", sbops);
+
+    printf("trustcache_ppl = func:0x%llx, data:0x%llx\n", find_pmap_initialize_legacy_static_trust_cache_ppl(), find_trust_cache_ppl());
+
+    term_kernel();
     
     for(int i=0;i<argc;i++) {
         if(strcmp(argv[i], "-e") == 0) {
