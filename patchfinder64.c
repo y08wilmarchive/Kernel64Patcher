@@ -525,21 +525,18 @@ static void *kernel_mh = 0;
 static addr_t kernel_delta = 0;
 
 int
-init_kernel(addr_t base, char *filename)
+init_kernel(addr_t base, const char *filename)
 {
-    printf("hit 1\n");
     size_t rv;
     uint8_t buf[0x4000];
     uint8_t *vstr;
     unsigned i, j;
-    printf("hit 2\n");
     const struct mach_header *hdr = (struct mach_header *)buf;
     FHANDLE fd = INVALID_HANDLE;
     const uint8_t *q;
     addr_t min = -1;
     addr_t max = 0;
     int is64 = 0;
-    printf("hit 3\n");
 
     if (filename == NULL) {
 #ifdef __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__
@@ -552,39 +549,25 @@ init_kernel(addr_t base, char *filename)
         return -1;
 #endif
     } else {
-        printf("hit 4\n");
         fd = OPEN(filename, O_RDONLY);
         if (fd == INVALID_HANDLE) {
             return -1;
         }
         rv = READ(fd, buf, sizeof(buf));
         if (rv != sizeof(buf) || !MACHO(buf)) {
-            printf("hit 5\n");
             CLOSE(fd);
             return -1;
         }
-        printf("hit 6\n");
     }
-    
-    printf("hit 7\n");
 
     if (IS64(buf)) {
         is64 = 4;
     }
-    
-    printf("hit 8\n");
-
 
     q = buf + sizeof(struct mach_header) + is64;
-    printf("hit 9\n");
-
     for (i = 0; i < hdr->ncmds; i++) {
         const struct load_command *cmd = (struct load_command *)q;
-        printf("hit 10\n");
-
         if (cmd->cmd == LC_SEGMENT_64 && ((struct segment_command_64 *)q)->vmsize) {
-            printf("hit 11\n");
-
             const struct segment_command_64 *seg = (struct segment_command_64 *)q;
             if (min > seg->vmaddr) {
                 min = seg->vmaddr;
@@ -623,7 +606,6 @@ init_kernel(addr_t base, char *filename)
                 }
             }
         }
-        printf("hit 12\n");
         if (cmd->cmd == LC_UNIXTHREAD) {
             uint32_t *ptr = (uint32_t *)(cmd + 1);
             uint32_t flavor = ptr[0];
@@ -639,11 +621,9 @@ init_kernel(addr_t base, char *filename)
                 kernel_entry = thread->pc;
             }
         }
-        printf("hit 13\n");
         q = q + cmd->cmdsize;
     }
 
-    printf("hit 14\n");
     if (pstring_base == 0 && pstring_size == 0) {
         pstring_base = cstring_base;
         pstring_size = cstring_size;
@@ -712,8 +692,6 @@ init_kernel(addr_t base, char *filename)
     if (vstr) {
         kernel_version = atoi((const char *)vstr + sizeof("Darwin Kernel Version"));
     }
-    
-    printf("hit 15\n");
 
     return 0;
 }
@@ -959,35 +937,18 @@ find_amfi_memcmpstub(void)
 addr_t
 find_sbops(void)
 {
-    printf("%s: Entering ...\n",__FUNCTION__);
-    printf("%s: kernel_size at %p\n",__FUNCTION__,kernel_size);
-    printf("%s: pstring_base at %p\n",__FUNCTION__,pstring_base);
-    printf("%s: prelink_base at %p\n",__FUNCTION__,prelink_base);
-    printf("%s: kerndumpbase at %p\n",__FUNCTION__,kerndumpbase);
-    const char sbops[] = "Seatbelt sandbox policy";
-    void* ent_loc = boyermoore_horspool_memmem(kernel + pstring_base, pstring_size, sbops, sizeof(sbops) / sizeof(*sbops));
-    if(!ent_loc) {
-        printf("%s: Could not find \"Seatbelt sandbox policy\" string\n",__FUNCTION__);
-        return -1;
+    addr_t off, what;
+    uint8_t *str = boyermoore_horspool_memmem(kernel + pstring_base, pstring_size, (uint8_t *)"Seatbelt sandbox policy", sizeof("Seatbelt sandbox policy") - 1);
+    if (!str) {
+        return 0;
     }
-    uint64_t strAddress = (uintptr_t) ent_loc - (uintptr_t) kernel + kerndumpbase;
-    printf("%s: Found \"Seatbelt sandbox policy\" str loc at %p\n",__FUNCTION__,strAddress);
-    uint64_t* ref = memmem(kernel, kernel_size, &strAddress, sizeof(strAddress));
-    if(!ref) {
-        printf("%s: Could not find \"Seatbelt sandbox policy\" xref\n",__FUNCTION__);
-        return -1;
+    what = str - kernel + kerndumpbase;
+    for (off = 0; off < kernel_size - prelink_base; off += 8) {
+        if (*(uint64_t *)(kernel + prelink_base + off) == what) {
+            return *(uint64_t *)(kernel + prelink_base + off + 24);
+        }
     }
-    printf("%s: Found \"Seatbelt sandbox policy\" xref at %p\n\n", __FUNCTION__,(void*)(ref));
-    
-    ref = *(ref + 3);
-    
-    uint64_t xref_stuff = ref;
-    
-    xref_stuff = xref_stuff - kerndumpbase;
-    
-    printf("%s: Found \"Seatbelt sandbox policy\" loc at %o\n",__FUNCTION__,(void*)(xref_stuff));
-    
-    return xref_stuff;
+    return 0;
 }
 
 addr_t

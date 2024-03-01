@@ -268,75 +268,33 @@ int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
-// iOS 8 arm64, this patch is broken atm pls fix
-int get_sbops_patch_ios8(void* kernel_buf,size_t kernel_len) {
-    printf("%s: Entering ...\n",__FUNCTION__);
-    uint64_t xref_stuff = find_sbops();
-    if (xref_stuff == -1) {
-        printf("%s: Could not find \"Seatbelt sandbox policy\" patch\n",__FUNCTION__);
-        return - 1;
+__unused static int insn_is_tbnz_w32(uint32_t* i)
+{
+    return (*i >> 24 == 0x37);
+}
+
+// iOS 8 arm64
+int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
+    // search 09 00 80 52 8A D0 38 D5
+    //MOV             W9, #0
+    //MRS             X10, #0, c13, c0, #4
+    uint8_t search[] = { 0x09, 0x00, 0x80, 0x52, 0x8A, 0xD0, 0x38, 0xD5 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
+        return -1;
     }
-    printf("%s: Found \"Seatbelt sandbox policy\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"mpo_file_check_mmap\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_file_check_mmap)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_file_check_mmap)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_rename\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_rename)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_rename)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_rename\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_rename)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_rename)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_access\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_access)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_access)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_chroot\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_chroot)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_chroot)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_create\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_create)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_create)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_deleteextattr\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_deleteextattr)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_deleteextattr)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_exchangedata\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_exchangedata)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_exchangedata)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_exec\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_exec)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_exec)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_getattrlist\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_getattrlist)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_getattrlist)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_getextattr\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_getextattr)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_getextattr)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_ioctl\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_ioctl)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_ioctl)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_link\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_link)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_link)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_listextattr\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_listextattr)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_listextattr)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_open\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_open)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_open)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_readlink\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_readlink)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_readlink)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_setattrlist\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setattrlist)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setattrlist)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_setextattr\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setextattr)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setextattr)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_setflags\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setflags)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setflags)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_setmode\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setmode)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setmode)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_setowner\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setowner)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setowner)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_setutimes\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setutimes)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setutimes)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_setutimes\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setutimes)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_setutimes)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_stat\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_stat)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_stat)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_truncate\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_truncate)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_truncate)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_unlink\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_unlink)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_unlink)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_notify_create\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_notify_create)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_notify_create)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_fsgetpath\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_fsgetpath)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_fsgetpath)) = 0x0;
-    printf("%s: Patching \"mpo_vnode_check_getattr\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_getattr)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_vnode_check_getattr)) = 0x0;
-    printf("%s: Patching \"mpo_mount_check_stat\" at %p\n\n", __FUNCTION__,(void*)(kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_mount_check_stat)));
-    *(uint64_t *) (kernel_buf + xref_stuff + offsetof(struct mac_policy_ops, mpo_mount_check_stat)) = 0x0;
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_tbnz_w32);
+    if(!xref_stuff) {
+        printf("%s: Could not find \"vm_fault_enter\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    xref_stuff = (addr_t)GET_OFFSET(kernel_len, xref_stuff);
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_fault_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff))
+    // 0x5280002d is mov x13, #0x1
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002d;
     return 0;
 }
 
@@ -350,9 +308,9 @@ int main(int argc, char **argv) {
         printf("Usage: %s <kernel_in> <kernel_out> <args>\n",argv[0]);
         printf("\t-m\t\tPatch mount_common (iOS 7& 8 Only)\n");
         printf("\t-e\t\tPatch vm_map_enter (iOS 7& 8 Only)\n");
+        printf("\t-f\t\tPatch vm_fault_enter (iOS 8 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
         printf("\t-a\t\tPatch map_IO (iOS 8 Only)\n");
-        printf("\t-b\t\tPatch sandbox (iOS 8 Only, broken atm)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         return 0;
@@ -401,6 +359,10 @@ int main(int argc, char **argv) {
             get_vm_map_enter_patch_ios7(kernel_buf,kernel_len);
             get_vm_map_enter_patch_ios8(kernel_buf,kernel_len);
         }
+        if(strcmp(argv[i], "-f") == 0) {
+            printf("Kernel: Adding vm_map_enter patch...\n");
+            get_vm_fault_enter_patch_ios8(kernel_buf,kernel_len);
+        }
         if(strcmp(argv[i], "-m") == 0) {
             printf("Kernel: Adding mount_common patch...\n");
             get_mount_common_patch_ios7(kernel_buf,kernel_len);
@@ -409,10 +371,6 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-s") == 0) {
             printf("Kernel: Adding PE_i_can_has_debugger patch...\n");
             get_PE_i_can_has_debugger_patch_ios8(kernel_buf,kernel_len);
-        }
-        if(strcmp(argv[i], "-b") == 0) {
-            printf("Kernel: Adding sandbox patch...\n");
-            get_sbops_patch_ios8(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-n") == 0) {
             printf("Kernel: Adding NoMoreSIGABRT patch...\n");
