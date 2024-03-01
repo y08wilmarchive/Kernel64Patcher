@@ -338,28 +338,10 @@ int main(int argc, char **argv) {
     const addr_t vm_kernel_slide = 0;
     rv = init_kernel(base, (argc > 1) ? argv[1] : "krnl");
     assert(rv == 0);
-
-    addr_t allproc = find_allproc();
-    printf("allproc = 0x%llx\n", allproc);
-    addr_t realhost = find_realhost(find_symbol("_host_priv_self") + vm_kernel_slide);
-    printf("realhost = 0x%llx\n", realhost - vm_kernel_slide);
-
-    addr_t trustcache = find_trustcache();
-    if (!trustcache) {
-        trustcache = find_cache(1);
-    }
-    printf("trustcache = 0x%llx\n", trustcache);
-    addr_t amficache = find_amficache();
-    if (!amficache) {
-        amficache = find_cache(0);
-    }
-    printf("amficache = 0x%llx\n", amficache);
     
     addr_t sbops = find_sbops();
     
     printf("sbops = 0x%llx\n", sbops);
-
-    printf("trustcache_ppl = func:0x%llx, data:0x%llx\n", find_pmap_initialize_legacy_static_trust_cache_ppl(), find_trust_cache_ppl());
 
     term_kernel();
     
