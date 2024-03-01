@@ -715,9 +715,7 @@ init_kernel(addr_t base, char *filename)
     
     printf("hit 15\n");
     
-    addr_t sbops = find_sbops();
-    
-    printf("sbops = 0x%llx\n", sbops);
+    find_sbops()
     
     printf("hit 16\n");
 
@@ -976,9 +974,8 @@ find_sbops(void)
     what = str - kernel + kerndumpbase;
     for (off = 0; off < kernel_size - prelink_base; off += 8) {
         if (*(uint64_t *)(kernel + prelink_base + off) == what) {
-            uint64_t loc = *(uint64_t *)(kernel + prelink_base + off + 24);
-            printf("%s: Found \"sbops\" loc at %p\n",__FUNCTION__,loc);
-            return loc;
+            printf("%s: Found \"sbops\" loc at %llu\n",__FUNCTION__,*(uint64_t *)(kernel + prelink_base + off + 24));
+            return *(uint64_t *)(kernel + prelink_base + off + 24);
         }
     }
     return 0;
