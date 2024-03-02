@@ -8,8 +8,6 @@
 #include <string.h>
 #include <stddef.h>
 
-#include "sbops.h"
-
 #include "patchfinder64.c"
 
 #define GET_OFFSET(kernel_len, x) (x - (uintptr_t) kernel_buf)
