@@ -377,11 +377,11 @@ int main(int argc, char **argv) {
             get_vm_map_enter_patch_ios8(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-f") == 0) {
-            printf("Kernel: Adding vm_map_enter patch...\n");
+            printf("Kernel: Adding vm_fault_enter patch...\n");
             get_vm_fault_enter_patch_ios8_beta2(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-k") == 0) {
-            printf("Kernel: Adding vm_map_enter patch...\n");
+            printf("Kernel: Adding vm_fault_enter patch...\n");
             get_vm_fault_enter_patch_ios8(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-m") == 0) {
