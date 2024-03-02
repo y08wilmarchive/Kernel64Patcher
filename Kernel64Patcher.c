@@ -310,7 +310,7 @@ int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Found \"vm_fault_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     printf("%s: Patching \"vm_fault_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     xref_stuff = xref_stuff + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4;
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002d; // // mov x13, #0x1
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002d; // mov w13, #0x1
     return 0;
 }
 
