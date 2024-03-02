@@ -324,7 +324,7 @@ int main(int argc, char **argv) {
         printf("Usage: %s <kernel_in> <kernel_out> <args>\n",argv[0]);
         printf("\t-m\t\tPatch mount_common (iOS 7& 8 Only)\n");
         printf("\t-e\t\tPatch vm_map_enter (iOS 7& 8 Only)\n");
-        printf("\t-f\t\tPatch vm_fault_enter (iOS 8 beta 2 Only)\n");
+        printf("\t-f\t\tPatch vm_fault_enter (iOS 8 beta 2, 3& 4 Only)\n");
         printf("\t-k\t\tPatch vm_fault_enter (iOS 8 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
         printf("\t-a\t\tPatch map_IO (iOS 8 Only)\n");
