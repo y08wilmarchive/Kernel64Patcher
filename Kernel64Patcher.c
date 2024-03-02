@@ -273,6 +273,27 @@ __unused static int insn_is_tbnz_w32(uint32_t* i)
     return (*i >> 24 == 0x37);
 }
 
+// iOS 8 beta 2 arm64
+int get_vm_fault_enter_patch_ios8_beta2(void* kernel_buf,size_t kernel_len) {
+    // search 09 00 80 52 8A D0 38 D5
+    //MOV             W9, #0
+    //MRS             X10, #0, c13, c0, #4
+    uint8_t search[] = { 0x09, 0x00, 0x80, 0x52, 0x8A, 0xD0, 0x38, 0xD5 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_fault_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    xref_stuff = xref_stuff + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4 + 0x4;
+    // xref_stuff = xref_stuff - 0x4; // iOS 8 beta 2 does not need this line of code, but iOS 8.0+ does
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002d; // // mov x13, #0x1
+    return 0;
+}
+
 // iOS 8 arm64
 int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
     // search 09 00 80 52 8A D0 38 D5
@@ -303,7 +324,8 @@ int main(int argc, char **argv) {
         printf("Usage: %s <kernel_in> <kernel_out> <args>\n",argv[0]);
         printf("\t-m\t\tPatch mount_common (iOS 7& 8 Only)\n");
         printf("\t-e\t\tPatch vm_map_enter (iOS 7& 8 Only)\n");
-        printf("\t-f\t\tPatch vm_fault_enter (iOS 8 Only)\n");
+        printf("\t-f\t\tPatch vm_fault_enter (iOS 8 beta 2 Only)\n");
+        printf("\t-k\t\tPatch vm_fault_enter (iOS 8 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
         printf("\t-a\t\tPatch map_IO (iOS 8 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
@@ -355,6 +377,10 @@ int main(int argc, char **argv) {
             get_vm_map_enter_patch_ios8(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-f") == 0) {
+            printf("Kernel: Adding vm_map_enter patch...\n");
+            get_vm_fault_enter_patch_ios8_beta2(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-k") == 0) {
             printf("Kernel: Adding vm_map_enter patch...\n");
             get_vm_fault_enter_patch_ios8(kernel_buf,kernel_len);
         }
