@@ -312,6 +312,33 @@ int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 8 arm64
+int get_tfp0_patch_ios8(void* kernel_buf,size_t kernel_len) {
+    // search 13 09 40 F9 FF 17 00 F9 FF 27 00 B9 F5 0D 00 34
+    // ldr x19, [x8, #0x10]
+    // str xzr, [sp, #0x28]
+    // str wzr, [sp, #0x24]
+    // cbz w21, 0xffffff800237e46c
+    uint8_t search[] = { 0x13, 0x09, 0x40, 0xF9, 0xFF, 0x17, 0x00, 0xF9, 0xFF, 0x27, 0x00, 0xB9, 0xF5, 0x0D, 0x00, 0x34 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"tfp0\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"tfp0\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"tfp0\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"tfp0\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
+    // we want to make the cbz a nop, and the ent_loc starts at ldr x19, [x8, #0x10]
+    // so we have to add 0x4, 3 times, in order to get to the cbz
+    xref_stuff = xref_stuff + 0x4;
+    xref_stuff = xref_stuff + 0x4;
+    xref_stuff = xref_stuff + 0x4;
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F;
+    return 0;
+}
+
 int main(int argc, char **argv) {
     
     printf("%s: Starting...\n", __FUNCTION__);
@@ -326,6 +353,7 @@ int main(int argc, char **argv) {
         printf("\t-k\t\tPatch vm_fault_enter (iOS 8 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
         printf("\t-a\t\tPatch map_IO (iOS 8 Only)\n");
+        printf("\t-t\t\tPatch tfp0 (iOS 8 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         return 0;
@@ -402,6 +430,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-a") == 0) {
             printf("Kernel: Adding map_IO patch...\n");
             get_mapIO_patch_ios8(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-t") == 0) {
+            printf("Kernel: Adding tfp0 patch...\n");
+            get_tfp0_patch_ios8(kernel_buf,kernel_len);
         }
     }
     
