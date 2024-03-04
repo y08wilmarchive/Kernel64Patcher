@@ -298,7 +298,7 @@ int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
-// iOS 8 arm64
+// iOS 8 arm64
 int get_tfp0_patch_ios8(void* kernel_buf,size_t kernel_len) {
     // search 13 09 40 F9 FF 17 00 F9 FF 27 00 B9 F5 0D 00 34
     // ldr x19, [x8, #0x10]
