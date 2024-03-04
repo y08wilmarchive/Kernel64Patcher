@@ -325,6 +325,48 @@ int get_tfp0_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 8 arm64
+int get_sandbox_trace_patch_ios8(void* kernel_buf,size_t kernel_len) {
+    // search 02 10 1F 20 03 D5 08 01 40 39 1F 01 1C 72 E0 17 9F 1A 02 00 00 14 00 00 80 52 FD 7B C1 A8 C0 03 5F D6
+    // e8e202101f2003d5080140391f011c72e0179f1a0200001400008052fd7bc1a8c0035fd6
+    // ... heres two notable lines of code
+    // bl 0xffffff8002c77d94
+    // cbz w0, 0xffffff8002c7677c
+    // ... and now for what we are actually searching for with memmem
+    // adr x8, 0xffffff8002c7c3c0
+    // nop
+    // ldrb w8, [x8]
+    // tst w8, #0x10
+    // cset w0, eq
+    // b 0xffffff8002c76780
+    // mov w0, #0
+    // ldp x29, x30, [sp], #0x10
+    // ret
+    // take note that we are searching by 02 10 and not E8 E2 02 10 at the start
+    // this means to get to the next line we need to add 0x2 not 0x4
+    // we need to make bl 0xffffff8002c77d94 a nop
+    // this makes the function return 0 instead of 1
+    uint8_t search[] = { 0x02, 0x10, 0x1F, 0x20, 0x03, 0xD5, 0x08, 0x01, 0x40, 0x39, 0x1F, 0x01, 0x1C, 0x72, 0xE0, 0x17, 0x9F, 0x1A, 0x02, 0x00, 0x00, 0x14, 0x00, 0x00, 0x80, 0x52, 0xFD, 0x7B, 0xC1, 0xA8, 0xC0, 0x03, 0x5F, 0xD6 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"sandbox_trace\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sandbox_trace\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"sandbox_trace\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"sandbox_trace\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
+    // we want to make the bl a nop, and the ent_loc starts at adr x8, 0xffffff8002c7c3c0
+    // so we have to add 0x2 to get to the nop on the next line down, then subtract 0x4 3 times to go 3 lines back
+    xref_stuff = xref_stuff + 0x2;
+    xref_stuff = xref_stuff - 0x4;
+    xref_stuff = xref_stuff - 0x4;
+    xref_stuff = xref_stuff - 0x4;
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F;
+    return 0;
+}
+
 int main(int argc, char **argv) {
     
     printf("%s: Starting...\n", __FUNCTION__);
@@ -339,6 +381,7 @@ int main(int argc, char **argv) {
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
         printf("\t-a\t\tPatch map_IO (iOS 8 Only)\n");
         printf("\t-t\t\tPatch tfp0 (iOS 8 Only)\n");
+        printf("\t-p\t\tPatch sandbox_trace (iOS 8 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         return 0;
@@ -415,6 +458,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-t") == 0) {
             printf("Kernel: Adding tfp0 patch...\n");
             get_tfp0_patch_ios8(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-p") == 0) {
+            printf("Kernel: Adding sandbox_trace patch...\n");
+            get_sandbox_trace_patch_ios8(kernel_buf,kernel_len);
         }
     }
     
