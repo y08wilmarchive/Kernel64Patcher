@@ -60,6 +60,33 @@ int get_vm_map_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 8 arm64
+int get_vm_map_protect_patch_ios8(void* kernel_buf,size_t kernel_len) {
+    // search EA 17 9F 1A 6A 01 0A 0A CB 7A 1D 12
+    // ea179f1a6a010a0acb7a1d12
+    // cset w10, eq
+    // and w10, w11, w10
+    // and w11, w22, #0xfffffffb
+    uint8_t search[] = { 0xEA, 0x17, 0x9F, 0x1A, 0x6A, 0x01, 0x0A, 0x0A, 0xCB, 0x7A, 0x1D, 0x12 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_map_protect\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_map_protect\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_map_protect\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_protect\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
+    // https://cryptii.com/pipes/integer-encoder
+    // if you convert 1f2003D5 to a 32 bit unsigned integer in little endian https://archive.is/22JSe
+    // you will get d503201f as a result, which can be used after the = sign to make this a nop
+    // however this vm_map_protect patch needs to be mov w11, w22 not a nop
+    // mov w11, w22 is 0xEB 0x03 0x16 0x2A which translates to 2a1603eb in little endian
+    *(uint32_t *) (kernel_buf + xref_stuff + 0x4 + 0x4) = 0x2A1603EB;
+    return 0;
+}
+
 // iOS 7 arm64
 int get_mount_common_patch_ios7(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
@@ -377,6 +404,7 @@ int main(int argc, char **argv) {
         printf("Usage: %s <kernel_in> <kernel_out> <args>\n",argv[0]);
         printf("\t-m\t\tPatch mount_common (iOS 7& 8 Only)\n");
         printf("\t-e\t\tPatch vm_map_enter (iOS 7& 8 Only)\n");
+        printf("\t-l\t\tPatch vm_map_protect (iOS 8 Only)\n");
         printf("\t-k\t\tPatch vm_fault_enter (iOS 8 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
         printf("\t-a\t\tPatch map_IO (iOS 8 Only)\n");
@@ -429,6 +457,10 @@ int main(int argc, char **argv) {
             printf("Kernel: Adding vm_map_enter patch...\n");
             get_vm_map_enter_patch_ios7(kernel_buf,kernel_len);
             get_vm_map_enter_patch_ios8(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-l") == 0) {
+            printf("Kernel: Adding vm_map_protect patch...\n");
+            get_vm_map_protect_patch_ios8(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-f") == 0) {
             printf("Kernel: Adding vm_fault_enter patch...\n");
