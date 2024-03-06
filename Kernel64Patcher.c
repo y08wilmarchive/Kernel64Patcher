@@ -474,13 +474,13 @@ int get_dealwith_activation_patch_mobactivationd_ios8(void* kernel_buf,size_t ke
     uint8_t search[] = { 0xE1, 0x63, 0x00, 0x91, 0xE2, 0x53, 0x00, 0x91, 0xE0, 0x03, 0x13, 0xAA };
     void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
     if (!ent_loc) {
-        printf("%s: Could not find \"set_brick_state\" patch\n",__FUNCTION__);
+        printf("%s: Could not find \"dealwith_activation\" patch\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"set_brick_state\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    printf("%s: Found \"dealwith_activation\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"set_brick_state\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"set_brick_state\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"dealwith_activation\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"dealwith_activation\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0xD503201F is nop
     // https://cryptii.com/pipes/integer-encoder
     // if you convert 1f2003D5 to a 32 bit unsigned integer in little endian https://archive.is/22JSe
