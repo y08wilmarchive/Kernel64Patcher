@@ -394,33 +394,38 @@ int get_sandbox_trace_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
-uint32_t* find_last_insn_matching_64(uint64_t region, uint8_t* kdata, size_t ksize, uint32_t* current_instruction, int (*match_func)(uint32_t*))
+static addr_t
+bof64(const uint8_t *buf, addr_t start, addr_t where)
 {
-    while((uintptr_t)current_instruction > (uintptr_t)kdata) {
-        current_instruction--;
-        
-        if(match_func(current_instruction)) {
-            return current_instruction;
+    for (; where >= start; where -= 4) {
+        uint32_t op = *(uint32_t *)(buf + where);
+        if ((op & 0xFFC003FF) == 0x910003FD) {
+            unsigned delta = (op >> 10) & 0xFFF;
+            //printf("%x: ADD X29, SP, #0x%x\n", where, delta);
+            if ((delta & 0xF) == 0) {
+                addr_t prev = where - ((delta >> 4) + 1) * 4;
+                uint32_t au = *(uint32_t *)(buf + prev);
+                if ((au & 0xFFC003E0) == 0xA98003E0) {
+                    //printf("%x: STP x, y, [SP,#-imm]!\n", prev);
+                    return prev;
+                }
+                // try something else
+                while (where > start) {
+                    where -= 4;
+                    au = *(uint32_t *)(buf + where);
+                    // SUB SP, SP, #imm
+                    if ((au & 0xFFC003FF) == 0xD10003FF && ((au >> 10) & 0xFFF) == delta + 0x10) {
+                        return where;
+                    }
+                    // STP x, y, [SP,#imm]
+                    if ((au & 0xFFC003E0) != 0xA90003E0) {
+                        where += 4;
+                        break;
+                    }
+                }
+            }
         }
     }
-    
-    return NULL;
-}
-
-__unused int insn_is_funcbegin_64(uint32_t* i)
-{
-    if (*i == 0xa9bf7bfd)
-        return 1;
-    if (*i == 0xa9bc5ff8)
-        return 1;
-    if (*i == 0xa9bd57f6)
-        return 1;
-    if (*i == 0xa9ba6ffc)
-        return 1;
-    if (*i == 0xa9bb67fa)
-        return 1;
-    if (*i == 0xa9be4ff4)
-        return 1;
     return 0;
 }
 
@@ -509,7 +514,7 @@ int get_handle_deactivate_patch_mobactivationd_ios8(void* kernel_buf,size_t kern
         return -1;
     }
     printf("%s: Found \"handle_deactivate\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, (addr_t)GET_OFFSET(kernel_len, xref_stuff), insn_is_funcbegin_64);
+    addr_t beg_func = bof64(kernel_buf,0,xref_stuff);
     if(!beg_func) {
        printf("%s: Could not find \"handle_deactivate\" funcbegin insn\n",__FUNCTION__);
         return -1;
@@ -540,7 +545,7 @@ int get_check_build_expired_patch_mobactivationd_ios8(void* kernel_buf,size_t ke
         return -1;
     }
     printf("%s: Found \"check_build_expired\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, (addr_t)GET_OFFSET(kernel_len, xref_stuff), insn_is_funcbegin_64);
+    addr_t beg_func = bof64(kernel_buf,0,xref_stuff);
     if(!beg_func) {
        printf("%s: Could not find \"check_build_expired\" funcbegin insn\n",__FUNCTION__);
         return -1;
