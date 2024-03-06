@@ -509,7 +509,7 @@ int get_handle_deactivate_patch_mobactivationd_ios8(void* kernel_buf,size_t kern
         return -1;
     }
     printf("%s: Found \"handle_deactivate\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, (addr_t)GET_OFFSET(kernel_len, xref_stuff), insn_is_funcbegin_64);
     if(!beg_func) {
        printf("%s: Could not find \"handle_deactivate\" funcbegin insn\n",__FUNCTION__);
         return -1;
@@ -540,7 +540,7 @@ int get_check_build_expired_patch_mobactivationd_ios8(void* kernel_buf,size_t ke
         return -1;
     }
     printf("%s: Found \"check_build_expired\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, (addr_t)GET_OFFSET(kernel_len, xref_stuff), insn_is_funcbegin_64);
     if(!beg_func) {
        printf("%s: Could not find \"check_build_expired\" funcbegin insn\n",__FUNCTION__);
         return -1;
