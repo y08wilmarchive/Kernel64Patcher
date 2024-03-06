@@ -394,41 +394,6 @@ int get_sandbox_trace_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
-static addr_t
-bof64(const uint8_t *buf, addr_t start, addr_t where)
-{
-    for (; where >= start; where -= 4) {
-        uint32_t op = *(uint32_t *)(buf + where);
-        if ((op & 0xFFC003FF) == 0x910003FD) {
-            unsigned delta = (op >> 10) & 0xFFF;
-            //printf("%x: ADD X29, SP, #0x%x\n", where, delta);
-            if ((delta & 0xF) == 0) {
-                addr_t prev = where - ((delta >> 4) + 1) * 4;
-                uint32_t au = *(uint32_t *)(buf + prev);
-                if ((au & 0xFFC003E0) == 0xA98003E0) {
-                    //printf("%x: STP x, y, [SP,#-imm]!\n", prev);
-                    return prev;
-                }
-                // try something else
-                while (where > start) {
-                    where -= 4;
-                    au = *(uint32_t *)(buf + where);
-                    // SUB SP, SP, #imm
-                    if ((au & 0xFFC003FF) == 0xD10003FF && ((au >> 10) & 0xFFF) == delta + 0x10) {
-                        return where;
-                    }
-                    // STP x, y, [SP,#imm]
-                    if ((au & 0xFFC003E0) != 0xA90003E0) {
-                        where += 4;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    return 0;
-}
-
 // iOS 8 arm64
 int get_set_brick_state_patch_mobactivationd_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
