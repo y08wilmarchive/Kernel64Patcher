@@ -9,7 +9,7 @@
 #include <stddef.h>
 
 #include "patchfinder64.c"
-#include "patchfinder642.c"
+#include "patchfinder64_friedappleteam.c"
 
 #define GET_OFFSET(kernel_len, x) (x - (uintptr_t) kernel_buf)
 

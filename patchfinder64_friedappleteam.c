@@ -1290,16 +1290,6 @@ uint64_t find_fill_x22(uint64_t region, uint8_t* kdata, size_t ksize)
     return (uint64_t)(magicSequencePtr - kdata);
 }
 
-uint64_t find_task_reference(uint64_t region, uint8_t* kdata, size_t ksize)
-{
-    uint64_t _current_task = find_current_task(region, kdata, ksize);
-    if (!_current_task)
-        return 0;
-    
-    // next function is _task_reference
-    return _current_task + 0xc;
-}
-
 uint64_t find_load_x0_from_x19(uint64_t region, uint8_t* kdata, size_t ksize)
 {
     uint8_t magic[] = { 0x60, 0x02, 0x40, 0xF9, 0xFD, 0x7B, 0x41, 0xA9, 0xF4, 0x4F, 0xC2, 0xA8, 0xC0, 0x03, 0x5F, 0xD6 };
