@@ -392,27 +392,21 @@ int get__MKBDeviceUnlockedSinceBoot_patch_ios8(void* kernel_buf,size_t kernel_le
         return -1;
     }
     printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = ent_loc;//(addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    xref_stuff = xref_stuff - 0x4; // move to bl 0x1000541cc
-    addr_t* beg_func = find_GOT_address_with_bl_64(0, kernel_buf, kernel_len, xref_stuff);
+    addr_t xref_stuff = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_b_unconditional_64);
+    if(!xref_stuff) {
+        printf("%s: Could not find \"_MKBDeviceUnlockedSinceBoot\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    addr_t beg_func = find_GOT_address_with_bl_64(0, kernel_buf, kernel_len, xref_stuff);
     if(!beg_func) {
         printf("%s: Could not find \"_MKBDeviceUnlockedSinceBoot\" beg_func\n",__FUNCTION__);
         return -1;
     }
-    //printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" beg_func at %p\n\n", __FUNCTION__,(void*)(beg_func));
-    //printf("%s: Patching \"_MKBDeviceUnlockedSinceBoot\" at %p\n\n", __FUNCTION__,GET_OFFSET(kernel_len,beg_func));
-    printf("%s: hit 1\n", __FUNCTION__);
-    addr_t beg_func2 = (addr_t)GET_OFFSET(kernel_len, beg_func);
-    if (!beg_func2) {
-        printf("%s: Could not find \"_MKBDeviceUnlockedSinceBoot\" offset\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: hit 2\n", __FUNCTION__);
-    *(uint32_t *) (kernel_buf + beg_func2) = 0x52800020; // mov w0, 0x1
-    printf("%s: hit 3\n", __FUNCTION__);
-    *(uint32_t *) (kernel_buf + beg_func2 + 0x4) = 0xD65F03C0; // ret
-    printf("%s: hit 4\n", __FUNCTION__);
+    beg_func = (addr_t)GET_OFFSET(kernel_len, xref_stuff);
+    printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" beg_func at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"_MKBDeviceUnlockedSinceBoot\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + beg_func) = 0x52800020; // mov w0, 0x1
+    *(uint32_t *) (kernel_buf + beg_func + 0x4) = 0xD65F03C0; // ret
     return 0;
 }
 
