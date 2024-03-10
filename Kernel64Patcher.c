@@ -9,6 +9,7 @@
 #include <stddef.h>
 
 #include "patchfinder64.c"
+#include "patchfinder642.c"
 
 #define GET_OFFSET(kernel_len, x) (x - (uintptr_t) kernel_buf)
 
@@ -245,27 +246,6 @@ int get_PE_i_can_has_debugger_patch_ios9(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
-uint32_t* find_next_insn_matching_64(uint64_t region, uint8_t* kdata, size_t ksize, uint32_t* current_instruction, int (*match_func)(uint32_t*))
-{
-    while((uintptr_t)current_instruction < (uintptr_t)kdata + ksize - 4) {
-        current_instruction++;
-        
-        if(match_func(current_instruction)) {
-            return current_instruction;
-        }
-    }
-    
-    return NULL;
-}
-
-__unused static int insn_is_b_unconditional_64(uint32_t* i)
-{
-    if ((*i & 0xfc000000) == 0x14000000)
-        return 1;
-    else
-        return 0;
-}
-
 // iOS 8 arm64
 int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
     // search 00 00 BC 52 40 58 80 72 00 08 00 11
@@ -394,6 +374,32 @@ int get_sandbox_trace_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 8 arm64
+int get__MKBDeviceUnlockedSinceBoot_patch_ios8(void* kernel_buf,size_t kernel_len) {
+    // search 1f 00 00 71 e8 17 9f 1a 88 02 00 b9 60 06 00 34
+    // .. heres one line before the ent_loc
+    // bl 0x1000541cc
+    // .. and heres what we are searching for
+    // cmp w0, #0
+    // cset w8, eq
+    // str w8, [x20]
+    // cbz w0, 0x100020038
+    // we need to step one line back and find the sub the bl is calling
+    uint8_t search[] = { 0x1F, 0x00, 0x00, 0x71, 0xE8, 0x17, 0x9F, 0x1A, 0x88, 0x02, 0x00, 0xB9, 0x60, 0x06, 0x00, 0x34 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"_MKBDeviceUnlockedSinceBoot\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"_MKBDeviceUnlockedSinceBoot\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    xref_stuff = xref_stuff - 0x4; // move to bl 0x1000541cc
+    
+    return find_GOT_address_with_bl_64(0, kernel_buf, kernel_len, xref_stuff);
+}
+
 int main(int argc, char **argv) {
     
     printf("%s: Starting...\n", __FUNCTION__);
@@ -410,6 +416,7 @@ int main(int argc, char **argv) {
         printf("\t-a\t\tPatch map_IO (iOS 8 Only)\n");
         printf("\t-t\t\tPatch tfp0 (iOS 8 Only)\n");
         printf("\t-p\t\tPatch sandbox_trace (iOS 8 Only)\n");
+        printf("\t-z\t\tPatch _MKBDeviceUnlockedSinceBoot (iOS 8 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         
@@ -495,6 +502,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-p") == 0) {
             printf("Kernel: Adding sandbox_trace patch...\n");
             get_sandbox_trace_patch_ios8(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-z") == 0) {
+            printf("Kernel: Adding _MKBDeviceUnlockedSinceBoot patch...\n");
+            get__MKBDeviceUnlockedSinceBoot_patch_ios8(kernel_buf,kernel_len);
         }
     }
     
