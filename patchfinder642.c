@@ -630,72 +630,6 @@ __unused static uint64_t insn_ldr_imm_imm_64(uint32_t* i)
     return 0;
 }
 
-bool uref;
-
-uint64_t find_register_value(uint32_t *dataPointer, uint64_t count, uint64_t base, unsigned char reg)
-{
-    bool isRegisterSet[33];
-    uint64_t registers[33];
-
-    memset(registers, 0, sizeof(registers));
-    for (uint64_t i = (count >> 2) - 32; ; ++i )
-    {
-        if ( i >= count >> 2 )
-            break;
-        uint32_t *insn = &dataPointer[i];
-        if ( insn_is_mov_reg64(insn) )
-        {
-            registers[insn_mov_reg_rd64(insn)] = registers[insn_mov_reg_rt64(insn)];
-            isRegisterSet[insn_mov_reg_rd64(insn)] = isRegisterSet[insn_mov_reg_rt64(insn)];
-        }
-        else if ( insn_is_movz_64(insn) )
-        {
-            registers[insn_movz_rd_64(insn)] = insn_movz_imm_64(insn);
-            isRegisterSet[insn_movz_rd_64(insn)] = 0;
-        }
-        else if ( insn_is_adrp_64(insn) )
-        {
-            registers[insn_adrp_rd_64(insn)] = insn_adrp_imm_64(insn) + ((registers[32] >> 12) << 12);
-            isRegisterSet[insn_adrp_rd_64(insn)] = 0;
-        }
-        else if ( insn_is_adr_64(insn) )
-        {
-            registers[insn_adr_rd_64(insn)] = insn_adr_imm_64(insn) + registers[32];
-            isRegisterSet[insn_adr_rd_64(insn)] = 0;
-        }
-        else if ( insn_is_ldr_literal_64(insn) )
-        {
-            registers[insn_ldr_literal_rt_64(insn)] = insn_ldr_literal_imm_64(insn);
-            isRegisterSet[insn_ldr_literal_rt_64(insn)] = 1;
-        }
-        else if ( insn_is_ldr_imm_64(insn) )
-        {
-            registers[insn_ldr_imm_rt_64(insn)] = registers[insn_ldr_imm_rn_64(insn)] + insn_ldr_imm_imm_64(insn);
-            isRegisterSet[insn_ldr_imm_rt_64(insn)] = 1;
-        }
-        else if ( insn_is_add_imm_64(insn) )
-        {
-            registers[insn_add_imm_rd_64(insn)] = insn_add_imm_imm_64(insn) + registers[insn_add_imm_rn_64(insn)];
-            isRegisterSet[insn_add_imm_rd_64(insn)] = 0;
-        }
-        else if ( insn_is_mov_bitmask(insn) )
-        {
-            registers[insn_mov_bitmask_rd(insn)] = insn_mov_bitmask_imm_64(insn);
-            isRegisterSet[insn_mov_bitmask_rd(insn)] = 0;
-        }
-        else if ( insn_is_ret(insn) )
-        {
-            for ( int j = 0; j < 31; ++j )
-            {
-                registers[j] = 0;
-                isRegisterSet[j] = 0;
-            }
-        }
-    }
-    uref = isRegisterSet[reg] != 0;
-    return registers[reg];
-}
-
 // calculate value (if possible) of register before specific instruction
 uint64_t find_pc_rel_value_64(uint64_t region, uint8_t* kdata, size_t ksize, uint32_t* last_insn, int reg)
 {
@@ -786,56 +720,6 @@ uint64_t find_pc_rel_value_64(uint64_t region, uint8_t* kdata, size_t ksize, uin
     PFExtLog("%s:%d FINAL value = %#llx\n", __func__, __LINE__, value);
     
     return value;
-}
-
-void* find_masked(uint8_t *kdata, size_t ksize, uint8_t *sequence, uint8_t *mask, size_t size)
-{
-    size_t min_size = 0;
-    while (mask[min_size] == 0xFF)
-        ++min_size;
-    
-    if (min_size) {
-        uint8_t *search_ptr = kdata;
-        while (search_ptr < kdata + ksize) {
-            // find next occurance
-            size_t remain_size = ksize - (search_ptr - kdata);
-            uint8_t *ptr = (uint8_t *)memmem(search_ptr, remain_size, sequence, min_size);
-            if (!ptr)
-                return 0;
-            
-            // check remaining bytes with mask
-            bool isFound = true;
-            for (size_t i = min_size; i < size; ++i) {
-                if ((ptr[i] & mask[i]) != sequence[i]) {
-                    isFound = false;
-                    break;
-                }
-            }
-            
-            if (isFound)
-                return ptr;
-            
-            // continue search from here
-            search_ptr = ptr + 1;
-        }
-    } else {
-        size_t k = 0; // kernel read index
-        size_t n = 0; // magic read index
-        while (k < ksize) {
-            if ((kdata[k] & mask[n]) != sequence[n]) {
-                n = 0;
-            } else {
-                ++n;
-                // check for matching size
-                if (n == size) {
-                    return kdata + k;
-                }
-            }
-            ++k;
-        }
-    }
-    
-    return 0;
 }
 
 // extract address of the GOT item by BL instruction in the kernel extension
@@ -962,82 +846,6 @@ uint64_t find_mac_policy_list(uint64_t region, uint8_t* kdata, size_t ksize)
 {
     //
     return 0;
-}
-
-uint64_t find_vm_allocate_812(uint64_t region, uint8_t* kdata, size_t ksize)
-{
-    uint8_t magic_value[] = { 0x09, 0x1F, 0xA0, 0x52, 0x89, 0xFD, 0x97, 0x72, 0x09, 0x01, 0x09, 0x0A };
-    
-    // find `flags & 0xF8BFEC` magic
-    uint32_t* magicStringPtr = memmem(kdata, ksize, magic_value, sizeof(magic_value) / sizeof(*magic_value));
-    if (!magicStringPtr)
-        return 0;
-    
-    //PFLog("magicStringPtr offset %#lx\n", (uint8_t*)magicStringPtr - kdata);
-    
-    // we need second offset
-    size_t remain_size = ksize - ((uint8_t*)magicStringPtr - kdata);
-    magicStringPtr = memmem(magicStringPtr + 1, remain_size, magic_value, sizeof(magic_value) / sizeof(*magic_value));
-    if (!magicStringPtr)
-        return 0;
-
-    //PFLog("magicStringPtr offset %#lx\n", (uint8_t*)magicStringPtr - kdata);
-    
-    // find function begining
-    uint32_t *insn = find_last_insn_matching_64(region, kdata, ksize, magicStringPtr, insn_is_funcbegin_64);
-    if (!insn)
-        return 0;
-    
-    //PFLog("insn offset %#lx\n", (uint8_t*)insn - kdata);
-    
-    return ((uint8_t *)insn - kdata);
-}
-
-uint64_t find_vm_allocate(uint64_t region, uint8_t* kdata, size_t ksize)
-{
-    const char magicString[] = "sb_packbuff_alloc_vm_buffer";
-    const char magicString2[] = "\"Init against 64b primordial proc";
-    bool is_iOS8_case = false;
-    uint8_t* magicStringPtr = memmem(kdata, ksize, magicString, sizeof(magicString) - 1);
-    if (!magicStringPtr) {
-        // iOS 8.x
-        magicStringPtr = memmem(kdata, ksize, magicString2, sizeof(magicString2) - 1);
-        // last attempt on fail
-        if (!magicStringPtr)
-            return find_vm_allocate_812(region, kdata, ksize);
-        is_iOS8_case = true;
-    }
-    //PFLog("%s: magicStringPtr %p\n", __PRETTY_FUNCTION__, (void *)(magicStringPtr - kdata + region));
-    
-    // now we have to find code in the kernel referencing to this error string
-    uint32_t *adr_instr = find_literal_ref_64(region, kdata, ksize, (uint32_t*)kdata, magicStringPtr - kdata);
-    if (!adr_instr)
-        return 0;
-    //PFLog("%s: adr_instr %p\n", __PRETTY_FUNCTION__, (void *)((uint8_t*)adr_instr - kdata + region));
-    
-    // find 'BL _vm_allocate'
-    uint32_t *bl_vm_allocate = find_last_insn_matching_64(region, kdata, ksize, adr_instr, insn_is_bl_64);
-    if (!bl_vm_allocate)
-        return 0;
-    //PFLog("%s: bl_vm_allocate %p\n", __PRETTY_FUNCTION__, (void *)((uint8_t*)bl_vm_allocate - kdata + region));
-    
-    if (is_iOS8_case) {
-        uint8_t* address = (uint8_t *)bl_vm_allocate + insn_bl_imm32_64(bl_vm_allocate);
-        if (!address)
-            return 0;
-        //PFLog("address offset %p\n", (void *)(address - kdata));
-        
-        return (uint64_t)(address - kdata);
-    }
-    
-    uint64_t vm_allocate_got = find_GOT_address_with_bl_64(region, kdata, ksize, bl_vm_allocate);
-    if (!vm_allocate_got)
-        return 0;
-    
-    // read vm_allocate address
-    uint64_t vm_allocate_address = *(uint64_t *)(kdata + vm_allocate_got) - region;
-    //PFLog("vm_allocate address %p\n", (void *)vm_allocate_address);
-    return vm_allocate_address;
 }
 
 uint64_t find_ptd_alloc(uint64_t region, uint8_t* kdata, size_t ksize)
@@ -1516,28 +1324,6 @@ uint64_t find_store_x0_at_x19(uint64_t region, uint8_t* kdata, size_t ksize)
     return (uint64_t)(magicSequencePtr - kdata);
 }
 
-uint64_t find_current_task(uint64_t region, uint8_t* kdata, size_t ksize)
-{
-    //uint8_t mask_current_task_310[] ={0x88, 0xD0, 0x38, 0xD5, 0x00, 0x89, 0x41, 0xF9, 0xC0, 0x03, 0x5F, 0xD6 };
-    //uint8_t mask_current_task_6B0[] ={0x88, 0xD0, 0x38, 0xD5, 0x00, 0x59, 0x43, 0xF9, 0xC0, 0x03, 0x5F, 0xD6 };
-    uint8_t _current_task_magic[] =   { 0x88, 0xD0, 0x38, 0xD5, 0x00, 0x00, 0x00, 0xF9, 0xC0, 0x03, 0x5F, 0xD6 };
-    uint8_t _current_task_mask[] =    { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-    
-    uint8_t* magicSequencePtr = find_masked(kdata, ksize, _current_task_magic, _current_task_mask, sizeof(_current_task_magic)/sizeof(*_current_task_magic));
-    if (!magicSequencePtr)
-        return 0;
-    /*
-    // locate sequence
-    uint8_t* magicSequencePtr = memmem(kdata, ksize, mask_current_task_310, sizeof(mask_current_task_310) / sizeof(*mask_current_task_310));
-    if (!magicSequencePtr) {
-        magicSequencePtr = memmem(kdata, ksize, mask_current_task_6B0, sizeof(mask_current_task_6B0) / sizeof(*mask_current_task_6B0));
-        if (!magicSequencePtr)
-            return 0;
-    }*/
-    
-    return (uint64_t)(magicSequencePtr - kdata);
-}
-
 uint64_t find_get_task_ipcspace(uint64_t region, uint8_t* kdata, size_t ksize)
 {
     // find _get_task_pmap
@@ -1777,49 +1563,6 @@ uint64_t find_realhost_special(uint64_t region, uint8_t* kdata, size_t ksize)
     //PFLog("table_value offset %p\n", (void *)table_value);
     
     return table_value;
-}
-
-uint64_t find_ipc_port_copyout_send(uint64_t region, uint8_t* kdata, size_t ksize)
-{
-    //uint8_t mask_special[] = { 0x88, 0xD0, 0x38, 0xD5, 0x08, 0x89, 0x41, 0xF9, 0x01, 0x51, 0x41, 0xF9, 0xE0, 0x03, 0x17, 0xAA };
-    
-    uint8_t magic_code[] = { 0x88, 0xD0, 0x38, 0xD5, 0x08, 0x00, 0x00, 0xF9, 0x01, 0x00, 0x41, 0xF9, 0xE0, 0x03, 0x17, 0xAA };
-    uint8_t magic_mask[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-    // 1. find {{ MRS X8, TPIDR_EL1 // LDR X8, [X8,#0x310] // LDR X1, [X8,#0x2A0] // MOV X0, X23 }}
-    // or
-    // 1. find {{ MRS X8, TPIDR_EL1 // LDR X8, [X8,#0x6B0] // LDR X1, [X8,#0x288] // MOV X0, X23 }}
-    // 2. find next BL
-    // 3. decode BL address - it's _ipc_port_copyout_send
-    
-    // or
-    // 1. find {{ MRS X8, TPIDR_EL1 // LDR X8, [X8,#0x318] // LDR X1, [X8,#0x2A0] // BL _ipc_port_copyout_send }}
-    uint8_t magic_code2[] = { 0x88, 0xD0, 0x38, 0xD5, 0x08, 0x00, 0x00, 0xF9, 0x01, 0x00, 0x41, 0xF9, 0x00, 0x00, 0x00, 0x94 };
-    uint8_t magic_mask2[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0xFC };
-    
-    // locate sequence
-    //uint32_t* magicSequencePtr = (uint32_t *)memmem(kdata, ksize, mask_special, sizeof(mask_special) / sizeof(*mask_special));
-    uint32_t *magicSequencePtr = find_masked(kdata, ksize, magic_code, magic_mask, sizeof(magic_code) / sizeof(*magic_code));
-    if (!magicSequencePtr) {
-        magicSequencePtr = find_masked(kdata, ksize, magic_code2, magic_mask2, sizeof(magic_code2) / sizeof(*magic_code2));
-        if (!magicSequencePtr)
-            return 0;
-    }
-    
-    //PFLog("magicSequencePtr %p\n", (void *)((uint8_t*)magicSequencePtr - kdata));
-    
-    uint32_t *bl_ipc_port_copyout_send = find_next_insn_matching_64(region, kdata, ksize, magicSequencePtr, insn_is_bl_64);
-    if (!bl_ipc_port_copyout_send)
-        return 0;
-    
-    //PFLog("bl_ipc_port_copyout_send %p\n", (void *)((uint8_t*)bl_ipc_port_copyout_send - kdata));
-    
-    uint8_t* address = (uint8_t *)bl_ipc_port_copyout_send + insn_bl_imm32_64(bl_ipc_port_copyout_send);
-    if (!address)
-        return 0;
-    
-    //PFLog("address _ipc_port_copyout_send %p\n", (void *)(address - kdata));
-    
-    return (uint64_t)(address - kdata);
 }
 
 uint64_t find_current_proc(uint64_t region, uint8_t* kdata, size_t ksize)
