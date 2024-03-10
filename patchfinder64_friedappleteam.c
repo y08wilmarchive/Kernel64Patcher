@@ -12,7 +12,7 @@
 #include <string.h>
 #include <stddef.h>
 
-#define DEBUG_EXTENDED 0
+#define DEBUG_EXTENDED 1
 #define DEBUG_ENABLED 1
 
 #if DEBUG_EXTENDED
