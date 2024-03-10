@@ -395,11 +395,14 @@ int get__MKBDeviceUnlockedSinceBoot_patch_ios8(void* kernel_buf,size_t kernel_le
     addr_t xref_stuff = ent_loc;//(addr_t)GET_OFFSET(kernel_len, ent_loc);
     printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     xref_stuff = xref_stuff - 0x4; // move to bl 0x1000541cc
-    
     addr_t beg_func = find_GOT_address_with_bl_64(0, kernel_buf, kernel_len, xref_stuff);
-    
-    printf("%s: Patching \"_MKBDeviceUnlockedSinceBoot\" at %p\n\n", __FUNCTION__,(void*)(GET_OFFSET(kernel_len,beg_func)));
-    
+    if(!beg_func) {
+        printf("%s: Could not find \"_MKBDeviceUnlockedSinceBoot\" beg_func\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" beg_func at %p\n\n", __FUNCTION__,(void*)(beg_func));
+    printf("%s: Patching \"_MKBDeviceUnlockedSinceBoot\" at %p\n\n", __FUNCTION__,GET_OFFSET(kernel_len,beg_func));
+    beg_func = (addr_t)GET_OFFSET(kernel_len, ent_loc);
     *(uint32_t *) (kernel_buf + beg_func) = 0x52800020; // mov w0, 0x1
     *(uint32_t *) (kernel_buf + beg_func + 0x4) = 0xD65F03C0; // ret
     return 0;
