@@ -744,11 +744,11 @@ uint64_t find_GOT_address_with_bl_64(uint64_t region, uint8_t* kdata, size_t ksi
         return 0;
     
     // get location of GOT - X16
-    uint64_t GOT_address_value = find_pc_rel_value_64(region, kdata, ksize, instr, 16);
-    if (!GOT_address_value)
-        return 0;
+    //uint64_t GOT_address_value = find_pc_rel_value_64(region, kdata, ksize, instr, 16);
+    //if (!GOT_address_value)
+    //    return 0;
     
-    return GOT_address_value;
+    return instr;
 }
 
 uint64_t find_printf_in_amfi_execve_hook(uint64_t region, uint8_t* kdata, size_t ksize)
