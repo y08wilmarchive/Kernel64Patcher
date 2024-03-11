@@ -392,12 +392,7 @@ int get__MKBDeviceUnlockedSinceBoot_patch_ios8(void* kernel_buf,size_t kernel_le
         return -1;
     }
     printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    void* xref_stuff = find_last_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_bl_64);
-    if(!xref_stuff) {
-        printf("%s: Could not find \"_MKBDeviceUnlockedSinceBoot\" xref\n",__FUNCTION__);
-        return -1;
-    }
-    addr_t beg_func = (addr_t)find_GOT_address_with_bl_64(0, kernel_buf, kernel_len, xref_stuff);
+    addr_t beg_func = (addr_t)find_GOT_address_with_bl_64(0, kernel_buf, kernel_len, find_last_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_bl_64));
     if(!beg_func) {
         printf("%s: Could not find \"_MKBDeviceUnlockedSinceBoot\" beg_func\n",__FUNCTION__);
         return -1;
