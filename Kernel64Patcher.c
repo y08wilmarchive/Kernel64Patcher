@@ -406,11 +406,8 @@ int get__MKBDeviceUnlockedSinceBoot_patch_ios8(void* kernel_buf,size_t kernel_le
     // ldr x16, _MKBDeviceUnlockedSinceBoot -> ret
     // br x16
     br_addr = (addr_t)GET_OFFSET(kernel_len, br_addr);
-    // for some dumb reason br_addr starts at br x16 + 0x4
-    // so lets go back 0x4 to get to br x16
-    xref_stuff = br_addr - 0x4; // step back to br x16
     xref_stuff = br_addr - 0x4; // step back to ldr x16, _MKBDeviceUnlockedSinceBoot
-    xref_stuff = br_addr - 0x4; // step back to nop
+    xref_stuff = xref_stuff - 0x4; // step back to nop
     printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" beg_func at %p\n\n", __FUNCTION__,GET_OFFSET(kernel_len,xref_stuff));
     printf("%s: Patching \"_MKBDeviceUnlockedSinceBoot\" at %p\n\n", __FUNCTION__,GET_OFFSET(kernel_len,xref_stuff));
     *(uint32_t *) (kernel_buf + xref_stuff) = 0x52800020; // mov w0, 0x1
