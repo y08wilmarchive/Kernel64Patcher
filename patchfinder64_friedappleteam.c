@@ -744,9 +744,33 @@ uint64_t find_GOT_address_with_bl_64(uint64_t region, uint8_t* kdata, size_t ksi
         return 0;
     
     // get location of GOT - X16
-    //uint64_t GOT_address_value = find_pc_rel_value_64(region, kdata, ksize, instr, 16);
-    //if (!GOT_address_value)
-    //    return 0;
+    uint64_t GOT_address_value = find_pc_rel_value_64(region, kdata, ksize, instr, 16);
+    if (!GOT_address_value)
+        return 0;
+    
+    return GOT_address_value;
+}
+
+// extract address of the BR item by BL instruction in the kernel extension
+uint64_t find_br_address_with_bl_64(uint64_t region, uint8_t* kdata, size_t ksize, uint32_t *insn)
+{
+    // check if BL is specified
+    if (!insn_is_bl_64(insn))
+        return 0;
+    
+    // get address of GOT stub
+    uint8_t* address = (uint8_t *)insn + insn_bl_imm32_64(insn);
+    //PFLog("%s: address %p\n", __func__, (void *)(address - kdata + region));
+    
+    // find BR instruction
+    uint32_t *instr = find_next_insn_matching_64(region, kdata, ksize, (uint32_t *)address, insn_is_br_64);
+    if (!instr)
+        return 0;
+    //PFLog("%s: BR address %p\n", __func__, (void *)((uint8_t*)instr - kdata + region));
+    
+    // check if it's BR x16
+    if (insn_br_reg_xn_64(instr) != 16)
+        return 0;
     
     return instr;
 }
