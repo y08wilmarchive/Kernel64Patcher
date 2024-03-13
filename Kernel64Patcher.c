@@ -305,6 +305,38 @@ int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 7 arm64
+int get_vm_fault_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
+    // search A8 00 90 36 D5 00 08 37 17 00 80 52
+    // tbnz w8, #0x13, 0xffffff80003305fc -> ldr w10, [sp, #0x30]
+    // mov w23, #0
+    // ldr w10, [sp, #0x30] -> tbnz w8, #0x13, 0xffffff80003305fc -> mov w10, 0x1
+    // cbnz w10, 0xffffff8000330700
+    // .. and heres our search pattern
+    // tbz w8, #0x12, 0xffffff80003305f4
+    // tbnz w21, #0x1, 0xffffff80003305fc
+    // mov w23, #0
+    // we need to move tbnz w8, #0x13, 0xffffff80003305fc around& make it a mov w10, 0x1
+    // because cbnz w10, 0xffffff8000330700 is checking register w10
+    uint8_t search[] = { 0xA8, 0x00, 0x90, 0x36, 0xD5, 0x00, 0x08, 0x37, 0x17, 0x00, 0x80, 0x52 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_fault_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    xref_stuff = xref_stuff - 0x4; // move to cbnz w10, 0xffffff8000330700
+    xref_stuff = xref_stuff - 0x4; // move to ldr w10, [sp, #0x30]
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002a; // mov w10, 0x1
+    xref_stuff = xref_stuff - 0x4; // move to mov w23, #0
+    xref_stuff = xref_stuff - 0x4; // move to tbnz w8, #0x13, 0xffffff80003305fc
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xb94033ea; // ldr w10, [sp, #0x30]
+    return 0;
+}
+
 // iOS 8 arm64
 int get_tfp0_patch_ios8(void* kernel_buf,size_t kernel_len) {
     // search 13 09 40 F9 FF 17 00 F9 FF 27 00 B9 F5 0D 00 34
@@ -487,6 +519,7 @@ int main(int argc, char **argv) {
         }
         if(strcmp(argv[i], "-f") == 0) {
             printf("Kernel: Adding vm_fault_enter patch...\n");
+            get_vm_fault_enter_patch_ios7(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios8(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-m") == 0) {
