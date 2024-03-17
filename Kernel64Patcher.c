@@ -248,33 +248,36 @@ int get_PE_i_can_has_debugger_patch_ios9(void* kernel_buf,size_t kernel_len) {
 
 // iOS 8 arm64
 int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
-    // search 00 00 BC 52 40 58 80 72 00 08 00 11
-    //MOV             W0, #0xE0000000
-    //MOVK            W0, #0x2C2
-    //ADD             W0, W0, #2
-    uint8_t search[] = { 0x00, 0x00, 0xBC, 0x52, 0x40, 0x58, 0x80, 0x72, 0x00, 0x08, 0x00, 0x11 };
-
-    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
-    if (!ent_loc) {
-        printf("%s: Could not find \"mapIO_patch\" patch\n",__FUNCTION__);
+    printf("%s: Entering ...\n",__FUNCTION__);
+    char* str = "LwVM::%s - I/O to 0x%016llx/0x%08lx does not start inside a partition\n";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str));
+    if(!ent_loc) {
+        printf("%s: Could not find \"LwVM::%s - I/O to 0x%016llx/0x%08lx does not start inside a partition\" string\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"mapIO_patch\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_b_unconditional_64);
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
     if(!xref_stuff) {
-        printf("%s: Could not find \"mapIO_patch\" xref\n",__FUNCTION__);
+        printf("%s: Could not find \"LwVM::%s - I/O to 0x%016llx/0x%08lx does not start inside a partition\" xref\n",__FUNCTION__);
         return -1;
     }
-    xref_stuff = (addr_t)GET_OFFSET(kernel_len, xref_stuff);
-    printf("%s: Found \"mapIO_patch\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"mapIO_patch\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    
+    addr_t b = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_b_unconditional_64);
+    if(!b) {
+        printf("%s: Could not find \"mapIO_patch\" b insn\n",__FUNCTION__);
+        return -1;
+    }
+    
+    b = (addr_t)GET_OFFSET(kernel_len, b);
+    printf("%s: Found \"mapIO_patch\" xref at %p\n\n", __FUNCTION__,(void*)(b));
+    printf("%s: Patching \"mapIO_patch\" at %p\n\n", __FUNCTION__,(void*)(b));
     // 0xD503201F is nop
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F;
+    *(uint32_t *) (kernel_buf + b) = 0xD503201F;
     return 0;
 }
 
 // iOS 8 arm64
 int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
     // search 1F 12 6A 00 00 34 5A 06 80 52
     // 8a 03 1f 12 6a 00 00 34 5a 06 80 52 0a 02 00 14 68 01 a8 37 cd 06 00 35
     // and w10, w28, #0x2
@@ -307,51 +310,13 @@ int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
 
 // iOS 9 arm64
 int get_vm_fault_enter_patch_ios9(void* kernel_buf,size_t kernel_len) {
-    // search 0C 12 6A 00 00 34 5C 06 80 52
-    // 0a010c126a0000345c0680526a020014b50010360a010a126a000034
-    // and w10, w8, #0x100000
-    // cbz w10, 0xffffff8004097554
-    // mov w28, #0x32
-    // b 0xffffff8004097ef8
-    // tbz w21, #0x2, 0xffffff8004097568
-    // and w10, w8, #0x400000
-    // cbz w10, 0xffffff8004097568
-    // take note that we are searching by 0C 12 and not 0a 01 0c 12 at the start
-    // this means to get to the next line we need to add 0x2 not 0x4
-    // we need to do https://web.archive.org/web/20240317024515/https://imgur.com/RKyaCrC these patches
-    uint8_t search[] = { 0x0C, 0x12, 0x6A, 0x00, 0x00, 0x34, 0x5C, 0x06, 0x80, 0x52 };
-    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
-    if (!ent_loc) {
-        printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vm_fault_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"vm_fault_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    xref_stuff = xref_stuff + 0x2; // move to cbz w10, 0xffffff8004097554
-    xref_stuff = xref_stuff - 0x4; // move to and w10, w8, #0x100000
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002a; // mov w10, 0x1
-    xref_stuff = xref_stuff - 0x4; // move to tbz w21, #0x1, 0xffffff8004097554
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
-    xref_stuff = xref_stuff - 0x4; // move to cbz w9, 0xffffff8004097554
-    xref_stuff = xref_stuff - 0x4; // move to tbz w10, #0x4, 0xffffff8004097554
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
-    xref_stuff = xref_stuff + 0x4; // move to cbz w9, 0xffffff8004097554
-    xref_stuff = xref_stuff + 0x4; // move to tbz w21, #0x1, 0xffffff8004097554
-    xref_stuff = xref_stuff + 0x4; // move to and w10, w8, #0x100000
-    xref_stuff = xref_stuff + 0x4; // move to cbz w10, 0xffffff8004097554
-    xref_stuff = xref_stuff + 0x4; // move to mov w28, #0x32
-    xref_stuff = xref_stuff + 0x4; // move to b 0xffffff8004097ef8
-    xref_stuff = xref_stuff + 0x4; // move to tbz w21, #0x2, 0xffffff8004097568
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
-    xref_stuff = xref_stuff + 0x4; // move to and w10, w8, #0x400000
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280000a; // mov w10, 0x0
+    printf("%s: Entering ...\n",__FUNCTION__);
     return 0;
 }
 
 // iOS 7 arm64
 int get_vm_fault_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
     // search A8 00 90 36 D5 00 08 37 17 00 80 52
     // tbnz w8, #0x13, 0xffffff80003305fc -> ldr w10, [sp, #0x30]
     // mov w23, #0
@@ -384,6 +349,7 @@ int get_vm_fault_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
 
 // iOS 8 arm64
 int get_tfp0_patch_ios8(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
     // search 13 09 40 F9 FF 17 00 F9 FF 27 00 B9 F5 0D 00 34
     // ldr x19, [x8, #0x10]
     // str xzr, [sp, #0x28]
@@ -411,6 +377,7 @@ int get_tfp0_patch_ios8(void* kernel_buf,size_t kernel_len) {
 
 // iOS 8 arm64
 int get_sandbox_trace_patch_ios8(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
     // search 02 10 1F 20 03 D5 08 01 40 39 1F 01 1C 72 E0 17 9F 1A 02 00 00 14 00 00 80 52 FD 7B C1 A8 C0 03 5F D6
     // e8e202101f2003d5080140391f011c72e0179f1a0200001400008052fd7bc1a8c0035fd6
     // ... heres two notable lines of code
@@ -451,47 +418,6 @@ int get_sandbox_trace_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
-// iOS 8 arm64
-int get__MKBDeviceUnlockedSinceBoot_patch_ios8(void* kernel_buf,size_t kernel_len) {
-    // search 1f 00 00 71 e8 17 9f 1a 88 02 00 b9 60 06 00 34
-    // .. heres one line before the ent_loc
-    // bl 0x1000541cc
-    // .. and heres what we are searching for
-    // cmp w0, #0
-    // cset w8, eq
-    // str w8, [x20]
-    // cbz w0, 0x100020038
-    // we need to step one line back and find the sub the bl is calling
-    uint8_t search[] = { 0x1F, 0x00, 0x00, 0x71, 0xE8, 0x17, 0x9F, 0x1A, 0x88, 0x02, 0x00, 0xB9, 0x60, 0x06, 0x00, 0x34 };
-    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
-    if (!ent_loc) {
-        printf("%s: Could not find \"_MKBDeviceUnlockedSinceBoot\" patch\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_bl_64);
-    if(!xref_stuff) {
-        printf("%s: Could not find \"_MKBDeviceUnlockedSinceBoot\" xref\n",__FUNCTION__);
-        return -1;
-    }
-    addr_t br_addr = (addr_t)find_br_address_with_bl_64(0, kernel_buf, kernel_len, xref_stuff);
-    if(!br_addr) {
-        printf("%s: Could not find \"_MKBDeviceUnlockedSinceBoot\" br_addr\n",__FUNCTION__);
-        return -1;
-    }
-    // nop -> mov w0, 0x1
-    // ldr x16, _MKBDeviceUnlockedSinceBoot -> ret
-    // br x16
-    br_addr = (addr_t)GET_OFFSET(kernel_len, br_addr);
-    xref_stuff = br_addr - 0x4; // step back to ldr x16, _MKBDeviceUnlockedSinceBoot
-    xref_stuff = xref_stuff - 0x4; // step back to nop
-    printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" beg_func at %p\n\n", __FUNCTION__,GET_OFFSET(kernel_len,xref_stuff));
-    printf("%s: Patching \"_MKBDeviceUnlockedSinceBoot\" at %p\n\n", __FUNCTION__,GET_OFFSET(kernel_len,xref_stuff));
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0x52800020; // mov w0, 0x1
-    *(uint32_t *) (kernel_buf + xref_stuff + 0x4) = 0xD65F03C0; // ret
-    return 0;
-}
-
 int main(int argc, char **argv) {
     
     printf("%s: Starting...\n", __FUNCTION__);
@@ -505,10 +431,9 @@ int main(int argc, char **argv) {
         printf("\t-l\t\tPatch vm_map_protect (iOS 8 Only)\n");
         printf("\t-f\t\tPatch vm_fault_enter (iOS 7, 8& 9 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
-        printf("\t-a\t\tPatch map_IO (iOS 8 Only)\n");
+        printf("\t-a\t\tPatch map_IO (iOS 8& 9 Only)\n");
         printf("\t-t\t\tPatch tfp0 (iOS 8 Only)\n");
         printf("\t-p\t\tPatch sandbox_trace (iOS 8 Only)\n");
-        printf("\t-z\t\tPatch _MKBDeviceUnlockedSinceBoot (iOS 8 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         
@@ -596,10 +521,6 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-p") == 0) {
             printf("Kernel: Adding sandbox_trace patch...\n");
             get_sandbox_trace_patch_ios8(kernel_buf,kernel_len);
-        }
-        if(strcmp(argv[i], "-z") == 0) {
-            printf("Kernel: Adding _MKBDeviceUnlockedSinceBoot patch...\n");
-            get__MKBDeviceUnlockedSinceBoot_patch_ios8(kernel_buf,kernel_len);
         }
     }
     
