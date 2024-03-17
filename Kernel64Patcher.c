@@ -142,6 +142,29 @@ int get_mount_common_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 9 arm64
+int get_mount_common_patch_ios9(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search E8 6E 40 F9 08 E5 41 39
+    // ldr x8, [x23, #0xd8]
+    // ldrb w8, [x8, #0x79]
+    // add 0x4 to address
+    uint8_t search[] = { 0xE8, 0x6E, 0x40, 0xF9, 0x08, 0xE5, 0x41, 0x39 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"mount_common\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"mount_common\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"mount_common\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"mount_common\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    xref_stuff = xref_stuff + 0x4;
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x528000c8; // mov w8, 0x6
+    return 0;
+}
+
 // iOS 8 NoMoreSIGABRT
 int get_NoMoreSIGABRT_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
@@ -426,7 +449,7 @@ int main(int argc, char **argv) {
     
     if(argc < 4){
         printf("Usage: %s <kernel_in> <kernel_out> <args>\n",argv[0]);
-        printf("\t-m\t\tPatch mount_common (iOS 7& 8 Only)\n");
+        printf("\t-m\t\tPatch mount_common (iOS 7, 8& 9 Only)\n");
         printf("\t-e\t\tPatch vm_map_enter (iOS 7& 8 Only)\n");
         printf("\t-l\t\tPatch vm_map_protect (iOS 8 Only)\n");
         printf("\t-f\t\tPatch vm_fault_enter (iOS 7, 8& 9 Only)\n");
@@ -497,6 +520,7 @@ int main(int argc, char **argv) {
             printf("Kernel: Adding mount_common patch...\n");
             get_mount_common_patch_ios7(kernel_buf,kernel_len);
             get_mount_common_patch_ios8(kernel_buf,kernel_len);
+            get_mount_common_patch_ios9(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-s") == 0) {
             printf("Kernel: Adding PE_i_can_has_debugger patch...\n");
