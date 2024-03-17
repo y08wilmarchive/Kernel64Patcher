@@ -255,20 +255,20 @@ int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
         printf("%s: Could not find \"_mapForIO\" string\n",__FUNCTION__);
         return -1;
     }
+    printf("%s: Found \"_mapForIO\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
     if(!xref_stuff) {
         printf("%s: Could not find \"_mapForIO\" xref\n",__FUNCTION__);
         return -1;
     }
-    
+    printf("%s: Found \"_mapForIO\" xref at %p\n\n", __FUNCTION__,(void*)(b));
     addr_t b = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_b_unconditional_64);
     if(!b) {
         printf("%s: Could not find \"_mapForIO\" b insn\n",__FUNCTION__);
         return -1;
     }
-    
     b = (addr_t)GET_OFFSET(kernel_len, b);
-    printf("%s: Found \"_mapForIO\" xref at %p\n\n", __FUNCTION__,(void*)(b));
+    printf("%s: Found \"_mapForIO\" patch loc at %p\n",__FUNCTION__,(void*)(b));
     printf("%s: Patching \"_mapForIO\" at %p\n\n", __FUNCTION__,(void*)(b));
     // 0xD503201F is nop
     *(uint32_t *) (kernel_buf + b) = 0xD503201F;
