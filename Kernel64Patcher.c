@@ -305,6 +305,51 @@ int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 9 arm64
+int get_vm_fault_enter_patch_ios9(void* kernel_buf,size_t kernel_len) {
+    // search 0C 12 6A 00 00 34 5C 06 80 52
+    // 0a010c126a0000345c0680526a020014b50010360a010a126a000034
+    // and w10, w8, #0x100000
+    // cbz w10, 0xffffff8004097554
+    // mov w28, #0x32
+    // b 0xffffff8004097ef8
+    // tbz w21, #0x2, 0xffffff8004097568
+    // and w10, w8, #0x400000
+    // cbz w10, 0xffffff8004097568
+    // take note that we are searching by 0C 12 and not 0a 01 0c 12 at the start
+    // this means to get to the next line we need to add 0x2 not 0x4
+    // we need to do https://web.archive.org/web/20240317024515/https://imgur.com/RKyaCrC these patches
+    uint8_t search[] = { 0x0C, 0x12, 0x6A, 0x00, 0x00, 0x34, 0x5C, 0x06, 0x80, 0x52 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_fault_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    xref_stuff = xref_stuff + 0x2; // move to cbz w10, 0xffffff8004097554
+    xref_stuff = xref_stuff - 0x4; // move to and w10, w8, #0x100000
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002a; // mov w10, 0x1
+    xref_stuff = xref_stuff - 0x4; // move to tbz w21, #0x1, 0xffffff8004097554
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
+    xref_stuff = xref_stuff - 0x4; // move to cbz w9, 0xffffff8004097554
+    xref_stuff = xref_stuff - 0x4; // move to tbz w10, #0x4, 0xffffff8004097554
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
+    xref_stuff = xref_stuff + 0x4; // move to cbz w9, 0xffffff8004097554
+    xref_stuff = xref_stuff + 0x4; // move to tbz w21, #0x1, 0xffffff8004097554
+    xref_stuff = xref_stuff + 0x4; // move to and w10, w8, #0x100000
+    xref_stuff = xref_stuff + 0x4; // move to cbz w10, 0xffffff8004097554
+    xref_stuff = xref_stuff + 0x4; // move to mov w28, #0x32
+    xref_stuff = xref_stuff + 0x4; // move to b 0xffffff8004097ef8
+    xref_stuff = xref_stuff + 0x4; // move to tbz w21, #0x2, 0xffffff8004097568
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
+    xref_stuff = xref_stuff + 0x4; // move to and w10, w8, #0x400000
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280000a; // mov w10, 0x0
+    return 0;
+}
+
 // iOS 7 arm64
 int get_vm_fault_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
     // search A8 00 90 36 D5 00 08 37 17 00 80 52
@@ -458,7 +503,7 @@ int main(int argc, char **argv) {
         printf("\t-m\t\tPatch mount_common (iOS 7& 8 Only)\n");
         printf("\t-e\t\tPatch vm_map_enter (iOS 7& 8 Only)\n");
         printf("\t-l\t\tPatch vm_map_protect (iOS 8 Only)\n");
-        printf("\t-f\t\tPatch vm_fault_enter (iOS 8 Only)\n");
+        printf("\t-f\t\tPatch vm_fault_enter (iOS 7, 8& 9 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
         printf("\t-a\t\tPatch map_IO (iOS 8 Only)\n");
         printf("\t-t\t\tPatch tfp0 (iOS 8 Only)\n");
@@ -521,6 +566,7 @@ int main(int argc, char **argv) {
             printf("Kernel: Adding vm_fault_enter patch...\n");
             get_vm_fault_enter_patch_ios7(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios8(kernel_buf,kernel_len);
+            get_vm_fault_enter_patch_ios9(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-m") == 0) {
             printf("Kernel: Adding mount_common patch...\n");
