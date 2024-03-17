@@ -249,8 +249,8 @@ int get_PE_i_can_has_debugger_patch_ios9(void* kernel_buf,size_t kernel_len) {
 // iOS 8 arm64
 int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
-    char* str = "I/O to 0x%016llx/0x%08lx does not start inside a partition\n";
-    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str));
+    char* str = "LwVM::%s - I/O to 0x%016llx/0x%08lx does not start inside a partition\n";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
     if(!ent_loc) {
         printf("%s: Could not find \"LwVM::%s - I/O to 0x%016llx/0x%08lx does not start inside a partition\" string\n",__FUNCTION__);
         return -1;
