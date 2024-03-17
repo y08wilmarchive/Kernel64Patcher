@@ -249,19 +249,19 @@ int get_PE_i_can_has_debugger_patch_ios9(void* kernel_buf,size_t kernel_len) {
 // iOS 8 arm64
 int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
-    char* str = "LwVM::%s - I/O to 0x%016llx/0x%08lx does not start inside a partition\n";
+    char* str = "I/O to 0x%016llx/0x%08lx does not start inside a partition\n";
     void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str));
     if(!ent_loc) {
         printf("%s: Could not find \"LwVM::%s - I/O to 0x%016llx/0x%08lx does not start inside a partition\" string\n",__FUNCTION__);
         return -1;
     }
-    addr_t* xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
     if(!xref_stuff) {
         printf("%s: Could not find \"LwVM::%s - I/O to 0x%016llx/0x%08lx does not start inside a partition\" xref\n",__FUNCTION__);
         return -1;
     }
     
-    addr_t* b = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_b_unconditional_64);
+    addr_t b = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_b_unconditional_64);
     if(!b) {
         printf("%s: Could not find \"mapIO_patch\" b insn\n",__FUNCTION__);
         return -1;
