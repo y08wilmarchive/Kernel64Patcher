@@ -341,7 +341,12 @@ int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"_mapForIO\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    addr_t b = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_b_unconditional_64);
+    addr_t bne = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_b_conditional_64);
+    if(!bne) {
+        printf("%s: Could not find \"_mapForIO\" b.ne insn\n",__FUNCTION__);
+        return -1;
+    }
+    addr_t b = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, bne, insn_is_b_unconditional_64);
     if(!b) {
         printf("%s: Could not find \"_mapForIO\" b insn\n",__FUNCTION__);
         return -1;
