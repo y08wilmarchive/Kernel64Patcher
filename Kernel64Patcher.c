@@ -457,7 +457,7 @@ int get_tfp0_patch_ios8(void* kernel_buf,size_t kernel_len) {
     // ldr w0, [x8]
     // ldr w21, [x8, #0x8]
     // ldr x19, [x8, #0x10]
-    uint8_t search[] = { 0x00 0x01 0x40 0xB9 0x15 0x09 0x40 0xB9 0x13 0x09 0x40 0xF9 };
+    uint8_t search[] = { 0x00, 0x01, 0x40, 0xB9, 0x15, 0x09, 0x40, 0xB9, 0x13, 0x09, 0x40, 0xF9 };
     void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
     if (!ent_loc) {
         printf("%s: Could not find \"tfp0\" patch\n",__FUNCTION__);
