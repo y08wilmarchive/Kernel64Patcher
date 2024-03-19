@@ -344,8 +344,8 @@ int get_vm_fault_enter_patch_ios9(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    printf("%s: Found \"vm_fault_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    addr_t b = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_b_unconditional_64);
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n\n", __FUNCTION__,(void*)(ent_loc));
+    addr_t b = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_b_unconditional_64);
     if(!b) {
         printf("%s: Could not find \"vm_fault_enter\" b insn\n",__FUNCTION__);
         return -1;
