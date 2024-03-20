@@ -743,13 +743,15 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
                 break;
             case 0xDDDDDDDD:
                 // b unconditional call to the sb_evaluate function
-                int64_t offset = (sb_evaluate - offset) / 4;
+                int64_t offset = (int64_t)sb_evaluate - (int64_t)offset;
+                offset = offset / 4;
                 uint32_t bl_instr = offset & 0x3FFFFFF | 0x14000000;
                 payloadAsUint32[i] = bl_instr;
                 break;
             case 0x11111111:
                 // bl call to the vn_getpath function
-                int64_t offset = ((vn_getpath - offset) / 4;
+                int64_t offset = (int64_t)vn_getpath - (int64_t)offset;
+                offset = offset / 4;
                 uint32_t b_instr = offset & 0x3FFFFFF | 0x94000000;
                 payloadAsUint32[i] = b_instr;
                 break;
