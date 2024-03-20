@@ -714,7 +714,13 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
         switch ( dataOffset )
         {
             case 0xCCCCCCCC:
-                payloadAsUint32[i] = *(uint32_t *) (kernel_buf + sb_evaluate_offset);
+                // ios 9.3.5 a9ba6ffc
+                // ios 9.2 a9ba6ffc
+                // ios 9.0 a9ba6ffc
+                // ios 8.4 a9ba6ffc
+                // ios 8.0 a9ba6ffc
+                patchValue = 0xA9BA6FFC;
+                payloadAsUint32[i] = patchValue;
                 break;
             case 0xDDDDDDDD:
                 patchValue = (sb_evaluate_for_arm_assembling >> 2) & 0x3FFFFFF | 0x14000000;
