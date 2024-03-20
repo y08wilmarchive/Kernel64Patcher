@@ -730,31 +730,26 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     for ( uint32_t i = 0; i < 0x190; ++i )
     {
         uint32_t dataOffset = payloadAsUint32[i];
-        switch ( dataOffset )
-        {
-            case 0xCCCCCCCC:
-                // ios 9.3.5 a9ba6ffc
-                // ios 9.2 a9ba6ffc
-                // ios 9.0 a9ba6ffc
-                // ios 8.4 a9ba6ffc
-                // ios 8.0 a9ba6ffc
-                patchValue = 0xA9BA6FFC; // sb_evaluate funcbegin insn hex value in little endian
-                payloadAsUint32[i] = patchValue;
-                break;
-            case 0xDDDDDDDD:
-                // b unconditional call to the sb_evaluate function
-                int64_t target = (int64_t)sb_evaluate - (int64_t)offset;
-                target = target / 4;
-                uint32_t bl_instr = target & 0x3FFFFFF | 0x14000000;
-                payloadAsUint32[i] = bl_instr;
-                break;
-            case 0x11111111:
-                // bl call to the vn_getpath function
-                int64_t target = (int64_t)vn_getpath - (int64_t)offset;
-                target = target / 4;
-                uint32_t b_instr = target & 0x3FFFFFF | 0x94000000;
-                payloadAsUint32[i] = b_instr;
-                break;
+        if (dataOffset == 0xCCCCCCCC) {
+            // ios 9.3.5 a9ba6ffc
+            // ios 9.2 a9ba6ffc
+            // ios 9.0 a9ba6ffc
+            // ios 8.4 a9ba6ffc
+            // ios 8.0 a9ba6ffc
+            patchValue = 0xA9BA6FFC; // sb_evaluate funcbegin insn hex value in little endian
+            payloadAsUint32[i] = patchValue;
+        } else if (dataOffset == 0xDDDDDDDD) {
+            // b unconditional call to the sb_evaluate function
+            int64_t target = (int64_t)sb_evaluate - (int64_t)offset;
+            target = target / 4;
+            uint32_t bl_instr = target & 0x3FFFFFF | 0x14000000;
+            payloadAsUint32[i] = bl_instr;
+        } else if (dataOffset == 0x11111111) {
+            // bl call to the vn_getpath function
+            int64_t target = (int64_t)vn_getpath - (int64_t)offset;
+            target = target / 4;
+            uint32_t b_instr = target & 0x3FFFFFF | 0x94000000;
+            payloadAsUint32[i] = b_instr;
         }
         offset += sizeof(uint32_t);
     }
