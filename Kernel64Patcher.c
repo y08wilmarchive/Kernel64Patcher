@@ -625,7 +625,9 @@ int64_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"vn_getpath\" br insn at %p\n", __FUNCTION__,(void*)(br));
-    return br;
+    xref_stuff = br - 0x4;
+    xref_stuff = xref_stuff - 0x4;
+    return xref_stuff;
 }
 
 addr_t get_sb_evaluate_offset(void* kernel_buf,size_t kernel_len) {
