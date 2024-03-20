@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #include "patchfinder64.c"
 #include "patchfinder64_friedappleteam.c"
