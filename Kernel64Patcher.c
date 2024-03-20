@@ -594,7 +594,7 @@ addr_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // search FD 83 00 91 F3 03 02 AA F4 03 01 AA F5 03 00 AA 76 02 40 B9
     uint8_t search[] = { 0xFD, 0x83, 0x00, 0x91, 0xF3, 0x03, 0x02, 0xAA, 0xF4, 0x03, 0x01, 0xAA, 0xF5, 0x03, 0x00, 0xAA, 0x76, 0x02, 0x40, 0xB9 };
-    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search));
     if (!ent_loc) {
         printf("%s: Could not find \"vn_getpath_offset\" patch\n",__FUNCTION__);
         return -1;
@@ -666,7 +666,7 @@ addr_t get_vn_getpath_offset(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // search FD 83 00 91 F3 03 02 AA F4 03 01 AA F5 03 00 AA 76 02 40 B9
     uint8_t search[] = { 0xFD, 0x83, 0x00, 0x91, 0xF3, 0x03, 0x02, 0xAA, 0xF4, 0x03, 0x01, 0xAA, 0xF5, 0x03, 0x00, 0xAA, 0x76, 0x02, 0x40, 0xB9 };
-    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search));
     if (!ent_loc) {
         printf("%s: Could not find \"vn_getpath_offset\" patch\n",__FUNCTION__);
         return -1;
