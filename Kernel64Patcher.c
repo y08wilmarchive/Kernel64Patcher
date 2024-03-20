@@ -612,8 +612,7 @@ addr_t get_vn_getpath_bl(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"vn_getpath\" bl insn at %p\n", __FUNCTION__,(void*)(bl));
-    addr_t blo = (addr_t)GET_OFFSET(kernel_len, bl);
-    return blo;
+    return bl;
 }
 
 addr_t get_sb_evaluate_offset(void* kernel_buf,size_t kernel_len) {
@@ -748,7 +747,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
             payloadAsUint32[i] = patchValue;
         } else if (dataOffset == 0x11111111) {
             // bl call to the vn_getpath function
-            patchValue = (uint32_t *) (kernel_buf + get_vn_getpath_bl(kernel_buf, kernel_len));
+            patchValue = get_vn_getpath_bl(kernel_buf, kernel_len);
             payloadAsUint32[i] = patchValue;
         }
         offset += sizeof(uint32_t);
