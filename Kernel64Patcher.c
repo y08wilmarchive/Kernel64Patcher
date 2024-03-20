@@ -590,13 +590,6 @@ addr_t get_sb_evaluate_hook(void* kernel_buf,size_t kernel_len) {
     return beg_func;
 }
 
-int64_t sxt64(int64_t value, uint8_t bits)
-{
-    value = ((uint64_t)value) << (64 - bits);
-    value >>= (64 - bits);
-    return value;
-}
-
 int64_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // %s: vn_getpath returned 0x%x\n and find last bl
@@ -619,15 +612,15 @@ int64_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"vn_getpath\" bl insn at %p\n", __FUNCTION__,(void*)(bl));
-    addr_t br = (addr_t)find_br_address_with_bl_64(0, kernel_buf, kernel_len, bl);
+    addr_t br = (addr_t)find_br_address_with_bl_64(0, kernel_buf, kernel_len, bl); // br x16
     if(!br) {
         printf("%s: Could not find \"vn_getpath\" br insn\n",__FUNCTION__);
         return -1;
     }
     printf("%s: Found \"vn_getpath\" br insn at %p\n", __FUNCTION__,(void*)(br));
-    xref_stuff = br - 0x4;
-    xref_stuff = xref_stuff - 0x4;
-    return xref_stuff;
+    xref_stuff = br - 0x4; // move to ldr x16, [x16, #0x2b0]
+    xref_stuff = xref_stuff - 0x4; // move to adrp x16, 0xffffff80026b0000
+    return xref_stuff; // funcbegin sub_ffffff800268dcf0 ios 8.4 ip5
 }
 
 addr_t get_sb_evaluate_offset(void* kernel_buf,size_t kernel_len) {
@@ -682,27 +675,6 @@ addr_t get_sb_evaluate_hook_offset(void* kernel_buf,size_t kernel_len) {
     return beg_func;
 }
 
-addr_t get_vn_getpath_offset(void* kernel_buf,size_t kernel_len) {
-    printf("%s: Entering ...\n",__FUNCTION__);
-    // search FD 83 00 91 F3 03 02 AA F4 03 01 AA F5 03 00 AA 76 02 40 B9
-    uint8_t search[] = { 0xFD, 0x83, 0x00, 0x91, 0xF3, 0x03, 0x02, 0xAA, 0xF4, 0x03, 0x01, 0xAA, 0xF5, 0x03, 0x00, 0xAA, 0x76, 0x02, 0x40, 0xB9 };
-    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search));
-    if (!ent_loc) {
-        printf("%s: Could not find \"vn_getpath_offset\" patch\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"vn_getpath_offset\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vn_getpath_offset\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    addr_t beg_func = bof64(kernel_buf,0,xref_stuff);
-    if(!beg_func) {
-       printf("%s: Could not find \"vn_getpath_offset\" funcbegin insn\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"vn_getpath_offset\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
-    return beg_func;
-}
-
 // iOS 8 arm64
 int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
@@ -739,7 +711,6 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     uint32_t vn_getpath = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
     uint32_t sb_evaluate_hook_offset = get_sb_evaluate_hook_offset(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64& GET_OFFSET
     uint32_t sb_evaluate_offset = get_sb_evaluate_offset(kernel_buf, kernel_len); // xref& bof64
-    uint32_t vn_getpath_offset = get_vn_getpath_offset(kernel_buf, kernel_len); // xref& bof64
     uint32_t *payloadAsUint32 = (uint32_t *)payload;
     uint32_t patchValue;
     uint64_t offset = get_sb_evaluate_hook(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
