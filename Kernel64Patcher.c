@@ -597,7 +597,7 @@ int64_t sxt64(int64_t value, uint8_t bits)
     return value;
 }
 
-addr_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
+int64_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // %s: vn_getpath returned 0x%x\n and find last bl
     char* str = "%s: vn_getpath returned 0x%x\n";
@@ -625,7 +625,7 @@ addr_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
     printf("%s: Found \"vn_getpath\" funcbegin insn at %p\n", __FUNCTION__,(void*)((int64_t) bl + (int64_t)offset));
     // sub_ffffff800268dcf0
     //patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x94000000;
-    return ((int64_t) bl + ((int64_t)offset * 2)) << 2;
+    return ((int64_t) bl + (int64_t)offset) >> 2;
 }
 
 addr_t get_sb_evaluate_offset(void* kernel_buf,size_t kernel_len) {
@@ -764,7 +764,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
             // bl call to the vn_getpath function
             bool isBl = true;
             uint64_t origin = offset;
-            uint64_t target = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+            int64_t target = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
             patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x94000000;
             payloadAsUint32[i] = patchValue;
         }
