@@ -25,8 +25,8 @@ int get_vm_map_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"vm_map_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vm_map_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"vm_map_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"vm_map_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
     // https://cryptii.com/pipes/integer-encoder
     // if you convert 1f2003D5 to a 32 bit unsigned integer in little endian https://archive.is/22JSe
@@ -49,8 +49,8 @@ int get_vm_map_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"vm_map_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vm_map_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"vm_map_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"vm_map_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
     // https://cryptii.com/pipes/integer-encoder
     // if you convert 1f2003D5 to a 32 bit unsigned integer in little endian https://archive.is/22JSe
@@ -76,8 +76,8 @@ int get_vm_map_protect_patch_ios8(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"vm_map_protect\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vm_map_protect\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"vm_map_protect\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"vm_map_protect\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_protect\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
     // https://cryptii.com/pipes/integer-encoder
     // if you convert 1f2003D5 to a 32 bit unsigned integer in little endian https://archive.is/22JSe
@@ -105,8 +105,8 @@ int get_vm_map_enter_patch_ios9(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"vm_map_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vm_map_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"vm_map_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"vm_map_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
     // https://cryptii.com/pipes/integer-encoder
     // if you convert 1f2003D5 to a 32 bit unsigned integer in little endian https://archive.is/22JSe
@@ -133,8 +133,8 @@ int get_vm_map_protect_patch_ios9(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"vm_map_protect\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vm_map_protect\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"vm_map_protect\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"vm_map_protect\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_protect\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
     // https://cryptii.com/pipes/integer-encoder
     // if you convert 1f2003D5 to a 32 bit unsigned integer in little endian https://archive.is/22JSe
@@ -160,8 +160,8 @@ int get_mount_common_patch_ios7(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"mount_common\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"mount_common\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"mount_common\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"mount_common\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"mount_common\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // add 0x8 to address https://github.com/TheRealClarity/wtfis/blob/main/wtfis/patchfinder64.c#L2121
     xref_stuff = xref_stuff + 0x8;
     // add 0x4 to address bcz we have 3 lines of arm64 instead of 2 lines of arm64
@@ -189,8 +189,8 @@ int get_mount_common_patch_ios8(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"mount_common\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"mount_common\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"mount_common\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"mount_common\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"mount_common\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // add 0x8 to address https://github.com/TheRealClarity/wtfis/blob/main/wtfis/patchfinder64.c#L2121
     xref_stuff = xref_stuff + 0x8;
     // 0xD503201F is nop
@@ -213,8 +213,8 @@ int get_mount_common_patch_ios9(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"mount_common\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"mount_common\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"mount_common\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"mount_common\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"mount_common\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     xref_stuff = xref_stuff + 0x4;
     // 0xD503201F is nop
     *(uint32_t *) (kernel_buf + xref_stuff) = 0x528000c8; // mov w8, 0x6
@@ -234,8 +234,8 @@ int get_NoMoreSIGABRT_patch_ios8(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"NoMoreSIGABRT\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"NoMoreSIGABRT\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"NoMoreSIGABRT\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"NoMoreSIGABRT\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"NoMoreSIGABRT\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0x2100c0 is 0xC0 0x00 0x21 0x00
     // we are replacing 0x80 0x00 0x21 0x00 with 0xC0 0x00 0x21 0x00
     // see https://nyansatan.github.io/dualboot/modifyingfilesystems.html for more info
@@ -256,8 +256,8 @@ int get_undo_NoMoreSIGABRT_patch_ios8(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"undo_NoMoreSIGABRT\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"undo_NoMoreSIGABRT\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"undo_NoMoreSIGABRT\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"undo_NoMoreSIGABRT\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"undo_NoMoreSIGABRT\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0x210080 is 0x80 0x00 0x21 0x00
     // we are replacing 0xC0 0x00 0x21 0x00 with 0x80 0x00 0x21 0x00
     // see https://nyansatan.github.io/dualboot/modifyingfilesystems.html for more info
@@ -284,13 +284,13 @@ int get_PE_i_can_has_debugger_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Found \"PE_i_can_has_debugger\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
     // loc starts at str w8, [x0], we can add +0x4 to go a line forward and -0x4 to go back
-    printf("%s: Found \"PE_i_can_has_debugger\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"PE_i_can_has_debugger\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0x1F 0x20 0x03 0xD5 for near top of sandbox patch at cbz w8, ...
     // 0x20 0x00 0x80 0x52 for bottom of sandbox patch at ldr w0, data_ ...
-    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n", __FUNCTION__,(void*)(xref_stuff - 0x4 - 0x4 - 0x4 - 0x4));
+    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff - 0x4 - 0x4 - 0x4 - 0x4));
     // 0xD503201F is nop for cbz
     *(uint32_t *) (kernel_buf + xref_stuff - 0x4 - 0x4 - 0x4 - 0x4) = 0xD503201F;
-    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n", __FUNCTION__,(void*)(xref_stuff + 0x4 + 0x4 + 0x4 + 0x4 + 0x4));
+    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff + 0x4 + 0x4 + 0x4 + 0x4 + 0x4));
     // 0x0x52800020 is mov w0, 0x1 to make the func return 1 always
     *(uint32_t *) (kernel_buf + xref_stuff + 0x4 + 0x4 + 0x4 + 0x4 + 0x4) = 0x52800020;
     return 0;
@@ -313,13 +313,13 @@ int get_PE_i_can_has_debugger_patch_ios9(void* kernel_buf,size_t kernel_len) {
     printf("%s: Found \"PE_i_can_has_debugger\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
     // loc starts at str w8, [x0], we can add +0x4 to go a line forward and -0x4 to go back
-    printf("%s: Found \"PE_i_can_has_debugger\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"PE_i_can_has_debugger\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0x1F 0x20 0x03 0xD5 for near top of sandbox patch at cbz w8, ...
     // 0x20 0x00 0x80 0x52 for bottom of sandbox patch at ldr w0, data_ ...
-    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n", __FUNCTION__,(void*)(xref_stuff - 0x4 - 0x4 - 0x4 - 0x4));
+    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff - 0x4 - 0x4 - 0x4 - 0x4));
     // 0xD503201F is nop for cbz
     *(uint32_t *) (kernel_buf + xref_stuff - 0x4 - 0x4 - 0x4 - 0x4) = 0xD503201F;
-    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n", __FUNCTION__,(void*)(xref_stuff + 0x4 + 0x4 + 0x4 + 0x4));
+    printf("%s: Patching \"PE_i_can_has_debugger\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff + 0x4 + 0x4 + 0x4 + 0x4));
     // 0x0x52800020 is mov w0, 0x1 to make the func return 1 always
     *(uint32_t *) (kernel_buf + xref_stuff + 0x4 + 0x4 + 0x4 + 0x4) = 0x52800020;
     return 0;
@@ -340,7 +340,7 @@ int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
         printf("%s: Could not find \"_mapForIO\" xref\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"_mapForIO\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"_mapForIO\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     addr_t bne = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_b_conditional_64);
     if(!bne) {
         printf("%s: Could not find \"_mapForIO\" b.ne insn\n",__FUNCTION__);
@@ -353,7 +353,7 @@ int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
     }
     b = (addr_t)GET_OFFSET(kernel_len, b);
     printf("%s: Found \"_mapForIO\" patch loc at %p\n",__FUNCTION__,(void*)(b));
-    printf("%s: Patching \"_mapForIO\" at %p\n", __FUNCTION__,(void*)(b));
+    printf("%s: Patching \"_mapForIO\" at %p\n\n", __FUNCTION__,(void*)(b));
     // 0xD503201F is nop
     *(uint32_t *) (kernel_buf + b) = 0xD503201F;
     return 0;
@@ -382,8 +382,8 @@ int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_fault_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     xref_stuff = xref_stuff + 0x2; // move to cbz w10, 0xffffff8002079a60
     xref_stuff = xref_stuff + 0x4; // move to mov w26, #0x32
     xref_stuff = xref_stuff + 0x4; // move to b 0xffffff800207a284
@@ -405,7 +405,7 @@ int get_vm_fault_enter_patch_ios9(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(ent_loc));
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n\n", __FUNCTION__,(void*)(ent_loc));
     addr_t b = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_b_unconditional_64);
     if(!b) {
         printf("%s: Could not find \"vm_fault_enter\" b insn\n",__FUNCTION__);
@@ -416,7 +416,7 @@ int get_vm_fault_enter_patch_ios9(void* kernel_buf,size_t kernel_len) {
     b = b + 0x4; // move to and w12, w20, #0x4
     b = b + 0x4; // move to str w10, [sp, #0x34]
     printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,(void*)(b));
-    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(b));
+    printf("%s: Patching \"vm_fault_enter\" at %p\n\n", __FUNCTION__,(void*)(b));
     // 0xD503201F is nop
     *(uint32_t *) (kernel_buf + b) = 0x5280002a; // mov w10, 0x1
     return 0;
@@ -444,8 +444,8 @@ int get_vm_fault_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_fault_enter\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     xref_stuff = xref_stuff - 0x4; // move to cbnz w10, 0xffffff8000330700
     xref_stuff = xref_stuff - 0x4; // move to ldr w10, [sp, #0x30]
     *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002a; // mov w10, 0x1
@@ -469,7 +469,7 @@ int get_tfp0_patch_ios8(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"tfp0\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    printf("%s: Found \"tfp0\" xref at %p\n", __FUNCTION__,(void*)(ent_loc));
+    printf("%s: Found \"tfp0\" xref at %p\n\n", __FUNCTION__,(void*)(ent_loc));
     addr_t bl = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_bl_64);
     if(!bl) {
         printf("%s: Could not find \"tfp0\" bl insn\n",__FUNCTION__);
@@ -478,7 +478,7 @@ int get_tfp0_patch_ios8(void* kernel_buf,size_t kernel_len) {
     bl = (addr_t)GET_OFFSET(kernel_len, bl);
     bl = bl - 0x4; // move to cbz w21, 0xffffff80043ca0d4
     printf("%s: Found \"tfp0\" patch loc at %p\n",__FUNCTION__,(void*)(bl));
-    printf("%s: Patching \"tfp0\" at %p\n", __FUNCTION__,(void*)(bl));
+    printf("%s: Patching \"tfp0\" at %p\n\n", __FUNCTION__,(void*)(bl));
     // 0xD503201F is nop
     *(uint32_t *) (kernel_buf + bl) = 0xD503201F; // nop
     return 0;
@@ -514,8 +514,8 @@ int get_sandbox_trace_patch_ios8(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"sandbox_trace\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"sandbox_trace\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"sandbox_trace\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"sandbox_trace\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"sandbox_trace\" at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
     // we want to make the bl a nop, and the ent_loc starts at adr x8, 0xffffff8002c7c3c0
     // so we have to add 0x2 to get to the nop on the next line down, then subtract 0x4 3 times to go 3 lines back
@@ -541,13 +541,13 @@ addr_t get_sb_evaluate(void* kernel_buf,size_t kernel_len) {
         printf("%s: Could not find \"rootless_entitlement\" xref\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"rootless_entitlement\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"rootless_entitlement\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
     if(!beg_func) {
         printf("%s: Could not find \"rootless_entitlement\" funcbegin insn\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"rootless_entitlement\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    printf("%s: Found \"rootless_entitlement\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
     return beg_func;
 }
 
@@ -565,13 +565,13 @@ addr_t get_sb_evaluate_hook(void* kernel_buf,size_t kernel_len) {
         printf("%s: Could not find \"control_name\" xref\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"control_name\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"control_name\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
     if(!beg_func) {
         printf("%s: Could not find \"control_name\" funcbegin insn\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"control_name\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    printf("%s: Found \"control_name\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
     return beg_func;
 }
 
@@ -585,13 +585,18 @@ addr_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"vn_getpath_offset\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    printf("%s: Found \"vn_getpath_offset\" xref at %p\n", __FUNCTION__,(void*)(ent_loc));
-    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_funcbegin_64);
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
+    if(!xref_stuff) {
+        printf("%s: Could not find \"vn_getpath_offset\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vn_getpath_offset\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
     if(!beg_func) {
         printf("%s: Could not find \"vn_getpath_offset\" funcbegin insn\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"vn_getpath_offset\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    printf("%s: Found \"vn_getpath_offset\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
     return beg_func;
 }
 
@@ -611,13 +616,13 @@ addr_t get_sb_evaluate_offset(void* kernel_buf,size_t kernel_len) {
        printf("%s: Could not find \"sb_evaluate_offset\" xref\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"sb_evaluate_offset\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"sb_evaluate_offset\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     addr_t beg_func = bof64(kernel_buf,0,xref_stuff);
     if(!beg_func) {
        printf("%s: Could not find \"sb_evaluate_offset\" funcbegin insn\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"sb_evaluate_offset\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    printf("%s: Found \"sb_evaluate_offset\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
     return beg_func;
 }
 
@@ -636,13 +641,13 @@ addr_t get_sb_evaluate_hook_offset(void* kernel_buf,size_t kernel_len) {
         printf("%s: Could not find \"control_name\" xref\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"control_name\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"control_name\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
     if(!beg_func) {
         printf("%s: Could not find \"control_name\" funcbegin insn\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"control_name\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    printf("%s: Found \"control_name\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
     beg_func = (addr_t)GET_OFFSET(kernel_len, beg_func);
     return beg_func;
 }
@@ -658,13 +663,13 @@ addr_t get_vn_getpath_offset(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"vn_getpath_offset\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vn_getpath_offset\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"vn_getpath_offset\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
     addr_t beg_func = bof64(kernel_buf,0,xref_stuff);
     if(!beg_func) {
        printf("%s: Could not find \"vn_getpath_offset\" funcbegin insn\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"vn_getpath_offset\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    printf("%s: Found \"vn_getpath_offset\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
     return beg_func;
 }
 
@@ -740,7 +745,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     uint32_t count = sizeof(payload) / sizeof(uint32_t);
     for(uint32_t i=0; i < count; ++i)
     {
-        printf("%s: Patching \"sandbox\" at %p\n", __FUNCTION__,(void*)(offset));
+        printf("%s: Patching \"sandbox\" at %p\n\n", __FUNCTION__,(void*)(offset));
         *(uint32_t *) (kernel_buf + offset) = payloadAsUint32[i];
         offset += sizeof(uint32_t);
     }
