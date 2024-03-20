@@ -590,7 +590,7 @@ addr_t get_sb_evaluate_hook(void* kernel_buf,size_t kernel_len) {
     return beg_func;
 }
 
-addr_t get_vn_getpath_bl(void* kernel_buf,size_t kernel_len) {
+uint32_t get_vn_getpath_bl(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // %s: vn_getpath returned 0x%x\n and find last bl
     char* str = "%s: vn_getpath returned 0x%x\n";
@@ -606,7 +606,7 @@ addr_t get_vn_getpath_bl(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"vn_getpath\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    addr_t bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_bl_64);
+    uint32_t bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_bl_64);
     if(!bl) {
         printf("%s: Could not find \"vn_getpath\" bl insn\n",__FUNCTION__);
         return -1;
