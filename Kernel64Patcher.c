@@ -722,7 +722,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     uint32_t vn_getpath_offset = get_vn_getpath_offset(kernel_buf, kernel_len); // xref& bof64
     uint32_t *payloadAsUint32 = (uint32_t *)payload;
     uint32_t patchValue;
-    uint64_t offset = sb_evaluate_hook_offset; // start of sb_evaluate_hook function
+    uint64_t offset = get_sb_evaluate_hook(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
     for ( uint32_t i = 0; i < 0x190; ++i )
     {
         uint32_t dataOffset = payloadAsUint32[i];
@@ -738,7 +738,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
             // b unconditional call to the sb_evaluate function
             bool isBl = false;
             uint64_t origin = offset;
-            uint64_t target = (uint64_t)sb_evaluate;
+            uint64_t target = get_sb_evaluate(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
             int64_t instr_offset = ((int64_t)target - (int64_t)origin) / 4;
             uint32_t b_instr = (isBl ? 0x94000000 : 0x14000000) | (uint32_t)(instr_offset & 0x3ffffff);
             payloadAsUint32[i] = b_instr;
@@ -746,7 +746,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
             // bl call to the vn_getpath function
             bool isBl = true;
             uint64_t origin = offset;
-            uint64_t target = (uint64_t)vn_getpath;
+            uint64_t target = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
             int64_t instr_offset = ((int64_t)target - (int64_t)origin) / 4;
             uint32_t bl_instr = (isBl ? 0x94000000 : 0x14000000) | (uint32_t)(instr_offset & 0x3ffffff);
             payloadAsUint32[i] = bl_instr;
