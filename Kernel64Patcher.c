@@ -631,18 +631,19 @@ addr_t get_sb_evaluate_hook_offset(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"control_name\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
     if(!xref_stuff) {
-       printf("%s: Could not find \"sb_evaluate_hook\" xref\n",__FUNCTION__);
+        printf("%s: Could not find \"control_name\" xref\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"sb_evaluate_hook\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
-    addr_t beg_func = bof64(kernel_buf,0,xref_stuff);
+    printf("%s: Found \"control_name\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
     if(!beg_func) {
-       printf("%s: Could not find \"sb_evaluate_hook\" funcbegin insn\n",__FUNCTION__);
+        printf("%s: Could not find \"control_name\" funcbegin insn\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"sb_evaluate_hook\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
+    printf("%s: Found \"control_name\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
+    beg_func = (addr_t)GET_OFFSET(kernel_len, beg_func);
     return beg_func;
 }
 
@@ -698,12 +699,12 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
         0x6D, 0x6F, 0x62, 0x69, 0x6C, 0x65, 0x2F, 0x4C, 0x69, 0x62, 0x72, 0x61, 0x72, 0x79, 0x2F, 0x50,
         0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6E, 0x63, 0x65, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
-    uint32_t sb_evaluate_hook = get_sb_evaluate_hook(kernel_buf, kernel_len);
-    uint32_t sb_evaluate = get_sb_evaluate(kernel_buf, kernel_len);
-    uint32_t vn_getpath = get_vn_getpath(kernel_buf, kernel_len);
-    uint32_t sb_evaluate_hook_offset = get_sb_evaluate_hook_offset(kernel_buf, kernel_len);
-    uint32_t sb_evaluate_offset = get_sb_evaluate_offset(kernel_buf, kernel_len);
-    uint32_t vn_getpath_offset = get_vn_getpath_offset(kernel_buf, kernel_len);
+    uint32_t sb_evaluate_hook = get_sb_evaluate_hook(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+    uint32_t sb_evaluate = get_sb_evaluate(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+    uint32_t vn_getpath = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+    uint32_t sb_evaluate_hook_offset = get_sb_evaluate_hook_offset(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64& GET_OFFSET
+    uint32_t sb_evaluate_offset = get_sb_evaluate_offset(kernel_buf, kernel_len); // xref& bof64
+    uint32_t vn_getpath_offset = get_vn_getpath_offset(kernel_buf, kernel_len); // xref& bof64
     uint32_t vn_getpath_for_arm_assembling = vn_getpath + 0xFFFF000;
     uint32_t sb_evaluate_for_arm_assembling = sb_evaluate + 0xFFFF004;
     uint32_t *payloadAsUint32 = (uint32_t *)payload;
@@ -719,7 +720,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
                 // ios 9.0 a9ba6ffc
                 // ios 8.4 a9ba6ffc
                 // ios 8.0 a9ba6ffc
-                patchValue = 0xA9BA6FFC;
+                patchValue = 0xA9BA6FFC; // sb_evaluate funcbegin insn hex value in little endian
                 payloadAsUint32[i] = patchValue;
                 break;
             case 0xDDDDDDDD:
@@ -734,6 +735,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
         vn_getpath_for_arm_assembling -= 4;
         sb_evaluate_for_arm_assembling -= 4;
     }
+    // insert payload starting at funcbegin insn for the sb_evaluate_hook function
     uint64_t offset = sb_evaluate_hook_offset;
     uint32_t count = sizeof(payload) / sizeof(uint32_t);
     for(uint32_t i=0; i < count; ++i)
@@ -742,6 +744,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
         *(uint32_t *) (kernel_buf + offset) = payloadAsUint32[i];
         offset += sizeof(uint32_t);
     }
+    // replace the entire sb_evaluate function with a b unconditional call to the sb_evaluate_hook function
     uint32_t branch_instr = (sb_evaluate_hook - sb_evaluate) >> 2 & 0x3FFFFFF | 0x14000000;
     *(uint32_t *) (kernel_buf + sb_evaluate_offset) = branch_instr;
     return 0;
