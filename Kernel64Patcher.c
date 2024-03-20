@@ -618,9 +618,10 @@ addr_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
         printf("%s: Could not find \"vn_getpath\" bl insn\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"vn_getpath\" bl insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    printf("%s: Found \"vn_getpath\" bl insn at %p\n", __FUNCTION__,(void*)(bl));
     uint32_t inst = (uint32_t *) (kernel_buf + bl);
     int64_t offset = sxt64((inst & 0x3ffffff), 26);
+    printf("%s: Found \"vn_getpath\" funcbegin insn at %p\n", __FUNCTION__,(void*)(bl + (offset * 4)));
     return bl + (offset * 4);
 }
 
