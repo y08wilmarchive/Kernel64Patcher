@@ -705,10 +705,13 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     uint32_t sb_evaluate_hook_offset = get_sb_evaluate_hook_offset(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64& GET_OFFSET
     uint32_t sb_evaluate_offset = get_sb_evaluate_offset(kernel_buf, kernel_len); // xref& bof64
     uint32_t vn_getpath_offset = get_vn_getpath_offset(kernel_buf, kernel_len); // xref& bof64
-    uint32_t vn_getpath_for_arm_assembling = vn_getpath + 0xFFFF000;
-    uint32_t sb_evaluate_for_arm_assembling = sb_evaluate + 0xFFFF004;
     uint32_t *payloadAsUint32 = (uint32_t *)payload;
     uint32_t patchValue;
+    // sb_evaluate_hook ffffff8002cc1630
+    // sb_evaluate ffffff8002cbfd5c
+    // vn_getpath ffffff800412f0b8
+    // sb_evaluate_hook > sb_evaluate
+    // vn_getpath > sb_evaluate_hook
     for ( uint32_t i = 0; i < 0x190; ++i )
     {
         uint32_t dataOffset = payloadAsUint32[i];
@@ -724,16 +727,16 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
                 payloadAsUint32[i] = patchValue;
                 break;
             case 0xDDDDDDDD:
-                patchValue = (sb_evaluate_for_arm_assembling >> 2) & 0x3FFFFFF | 0x14000000;
-                payloadAsUint32[i] = patchValue;
+                // jump back to sb_evaluate??
+                uint32_t branch_instr = (sb_evaluate - sb_evaluate_hook) >> 2 & 0x3FFFFFF | 0x14000000;
+                payloadAsUint32[i] = branch_instr;
                 break;
             case 0x11111111:
-                patchValue = (vn_getpath_for_arm_assembling >> 2) & 0x3FFFFFF | 0x94000000;
-                payloadAsUint32[i] = patchValue;
+                // a call to vn_getpath??
+                uint32_t branch_instr = (vn_getpath - sb_evaluate_hook) >> 2 & 0x3FFFFFF | 0x94000000;
+                payloadAsUint32[i] = branch_instr;
                 break;
         }
-        vn_getpath_for_arm_assembling -= 4;
-        sb_evaluate_for_arm_assembling -= 4;
     }
     // insert payload starting at funcbegin insn for the sb_evaluate_hook function
     uint64_t offset = sb_evaluate_hook_offset;
