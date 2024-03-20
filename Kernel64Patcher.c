@@ -590,24 +590,38 @@ addr_t get_sb_evaluate_hook(void* kernel_buf,size_t kernel_len) {
     return beg_func;
 }
 
+int64_t sxt64(int64_t value, uint8_t bits)
+{
+    value = ((uint64_t)value) << (64 - bits);
+    value >>= (64 - bits);
+    return value;
+}
+
 addr_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
-    // search FD 83 00 91 F3 03 02 AA F4 03 01 AA F5 03 00 AA 76 02 40 B9
-    uint8_t search[] = { 0xFD, 0x83, 0x00, 0x91, 0xF3, 0x03, 0x02, 0xAA, 0xF4, 0x03, 0x01, 0xAA, 0xF5, 0x03, 0x00, 0xAA, 0x76, 0x02, 0x40, 0xB9 };
-    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search));
-    if (!ent_loc) {
-        printf("%s: Could not find \"vn_getpath_offset\" patch\n",__FUNCTION__);
+    // %s: vn_getpath returned 0x%x\n and find last bl
+    char* str = "%s: vn_getpath returned 0x%x\n";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
+    if(!ent_loc) {
+        printf("%s: Could not find \"%s: vn_getpath returned 0x%x\n\" string\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"vn_getpath_offset\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    printf("%s: Found \"vn_getpath_offset\" xref at %p\n", __FUNCTION__,(void*)(ent_loc));
-    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_funcbegin_64);
-    if(!beg_func) {
-        printf("%s: Could not find \"vn_getpath_offset\" funcbegin insn\n",__FUNCTION__);
+    printf("%s: Found \"%s: vn_getpath returned 0x%x\n\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
+    if(!xref_stuff) {
+        printf("%s: Could not find \"%s: vn_getpath returned 0x%x\n\" xref\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"vn_getpath_offset\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
-    return beg_func;
+    printf("%s: Found \"%s: vn_getpath returned 0x%x\n\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_bl_64);
+    if(!bl) {
+        printf("%s: Could not find \"vn_getpath\" bl insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vn_getpath\" bl insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    uint32_t inst = (uint32_t *) (kernel_buf + bl);
+    int64_t offset = sxt64((inst & 0x3ffffff), 26);
+    return bl + (offset * 4);
 }
 
 addr_t get_sb_evaluate_offset(void* kernel_buf,size_t kernel_len) {
@@ -739,6 +753,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
             bool isBl = false;
             uint64_t origin = offset;
             uint64_t target = get_sb_evaluate(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+            target = target + 0x4; // skip to next line
             patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x14000000;
             payloadAsUint32[i] = patchValue;
         } else if (dataOffset == 0x11111111) {
