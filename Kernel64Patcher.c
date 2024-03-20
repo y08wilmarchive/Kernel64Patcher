@@ -529,7 +529,7 @@ int get_sandbox_trace_patch_ios8(void* kernel_buf,size_t kernel_len) {
 
 addr_t get_sb_evaluate(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
-    char* str = "rootless_entitlement";
+    char* str = "bad filter type";
     void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
     if(!ent_loc) {
         printf("%s: Could not find \"rootless_entitlement\" string\n",__FUNCTION__);
@@ -553,7 +553,7 @@ addr_t get_sb_evaluate(void* kernel_buf,size_t kernel_len) {
 
 addr_t get_sb_evaluate_hook(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
-    char* str = "control_name";
+    char* str = "bad regex index";
     void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
     if(!ent_loc) {
         printf("%s: Could not find \"control_name\" string\n",__FUNCTION__);
@@ -599,7 +599,7 @@ addr_t get_sb_evaluate_offset(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // rootless_entitlement
     // %s[%d] Container: %s (sandbox)\n
-    char* str = "rootless_entitlement";
+    char* str = "bad filter type";
     void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str));
     if(!ent_loc) {
         printf("%s: Could not find \"rootless_entitlement\" string\n",__FUNCTION__);
@@ -624,7 +624,7 @@ addr_t get_sb_evaluate_offset(void* kernel_buf,size_t kernel_len) {
 addr_t get_sb_evaluate_hook_offset(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // control_name
-    char* str = "control_name";
+    char* str = "bad regex index";
     void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str));
     if(!ent_loc) {
         printf("%s: Could not find \"control_name\" string\n",__FUNCTION__);
@@ -709,7 +709,7 @@ int get_sandbox_patch_ios84_taig(void* kernel_buf,size_t kernel_len) {
         printf("%s: hit 4 ...\n",__FUNCTION__);
 
 
-    uint32_t vn_getpath = get_vn_getpath_offset(kernel_buf, kernel_len);
+    uint32_t vn_getpath = get_vn_getpath(kernel_buf, kernel_len);
         printf("%s: hit 5 ...\n",__FUNCTION__);
 
     
