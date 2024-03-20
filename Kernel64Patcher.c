@@ -722,10 +722,8 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     };
     uint32_t sb_evaluate_hook = get_sb_evaluate_hook(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
     uint32_t sb_evaluate = get_sb_evaluate(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
-    uint32_t vn_getpath = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
     uint32_t sb_evaluate_hook_offset = get_sb_evaluate_hook_offset(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64& GET_OFFSET
     uint32_t sb_evaluate_offset = get_sb_evaluate_offset(kernel_buf, kernel_len); // xref& bof64
-    uint32_t vn_getpath_offset = get_vn_getpath_offset(kernel_buf, kernel_len); // xref& bof64
     uint32_t *payloadAsUint32 = (uint32_t *)payload;
     uint32_t patchValue;
     uint64_t offset = get_sb_evaluate_hook(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
