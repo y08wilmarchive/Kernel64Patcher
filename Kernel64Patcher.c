@@ -603,16 +603,16 @@ addr_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
     char* str = "%s: vn_getpath returned 0x%x\n";
     void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
     if(!ent_loc) {
-        printf("%s: Could not find \"%s: vn_getpath returned 0x%x\" string\n",__FUNCTION__);
+        printf("%s: Could not find \"vn_getpath\" string\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"%s: vn_getpath returned 0x%x\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    printf("%s: Found \"vn_getpath\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
     if(!xref_stuff) {
-        printf("%s: Could not find \"%s: vn_getpath returned 0x%x\" xref\n",__FUNCTION__);
+        printf("%s: Could not find \"vn_getpath\" xref\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"%s: vn_getpath returned 0x%x\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"vn_getpath\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
     addr_t bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_bl_64);
     if(!bl) {
         printf("%s: Could not find \"vn_getpath\" bl insn\n",__FUNCTION__);
