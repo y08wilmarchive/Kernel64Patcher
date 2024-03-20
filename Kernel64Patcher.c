@@ -721,12 +721,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     uint32_t vn_getpath_offset = get_vn_getpath_offset(kernel_buf, kernel_len); // xref& bof64
     uint32_t *payloadAsUint32 = (uint32_t *)payload;
     uint32_t patchValue;
-    // sb_evaluate_hook ffffff8002cc1630 bad regex index
-    // sb_evaluate ffffff8002cbfd5c bad filter type 
-    // vn_getpath ffffff800210b78c
-    // sb_evaluate_hook > sb_evaluate
-    // vn_getpath < sb_evaluate_hook
-    uint64_t offset = sb_evaluate_hook_offset;
+    uint64_t offset = sb_evaluate_hook_offset; // start of sb_evaluate_hook function
     for ( uint32_t i = 0; i < 0x190; ++i )
     {
         uint32_t dataOffset = payloadAsUint32[i];
