@@ -625,7 +625,7 @@ addr_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
     printf("%s: Found \"vn_getpath\" funcbegin insn at %p\n", __FUNCTION__,(void*)((int64_t) bl + (int64_t)offset));
     // sub_ffffff800268dcf0
     //patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x94000000;
-    return (int64_t) bl - (int64_t)offset;
+    return ((int64_t) bl + (int64_t)offset) >> 2;
 }
 
 addr_t get_sb_evaluate_offset(void* kernel_buf,size_t kernel_len) {
