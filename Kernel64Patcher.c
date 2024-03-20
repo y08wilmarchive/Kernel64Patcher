@@ -739,17 +739,15 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
             bool isBl = false;
             uint64_t origin = offset;
             uint64_t target = get_sb_evaluate(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
-            int64_t instr_offset = ((int64_t)target - (int64_t)origin) / 4;
-            uint32_t b_instr = (isBl ? 0x94000000 : 0x14000000) | (uint32_t)(instr_offset & 0x3ffffff);
-            payloadAsUint32[i] = b_instr;
+            patchValue = (((int64_t)target - (int64_t)origin) >> 2) & 0x3FFFFFF | 0x14000000;
+            payloadAsUint32[i] = patchValue;
         } else if (dataOffset == 0x11111111) {
             // bl call to the vn_getpath function
             bool isBl = true;
             uint64_t origin = offset;
             uint64_t target = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
-            int64_t instr_offset = ((int64_t)target - (int64_t)origin) / 4;
-            uint32_t bl_instr = (isBl ? 0x94000000 : 0x14000000) | (uint32_t)(instr_offset & 0x3ffffff);
-            payloadAsUint32[i] = bl_instr;
+            patchValue = (((int64_t)target - (int64_t)origin) >> 2) & 0x3FFFFFF | 0x94000000;
+            payloadAsUint32[i] = patchValue;
         }
         offset += sizeof(uint32_t);
     }
