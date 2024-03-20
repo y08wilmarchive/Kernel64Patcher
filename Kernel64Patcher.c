@@ -619,13 +619,13 @@ int64_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"vn_getpath\" bl insn at %p\n", __FUNCTION__,(void*)(bl));
-    addr_t blo = (addr_t)GET_OFFSET(kernel_len, bl);
-    uint32_t inst = (uint32_t *) (kernel_buf + blo);
-    int64_t offset = sxt64((inst & 0x3ffffff), 26);
-    printf("%s: Found \"vn_getpath\" funcbegin insn at %p\n", __FUNCTION__,(void*)((int64_t) bl + (int64_t)offset));
-    // sub_ffffff800268dcf0
-    //patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x94000000;
-    return ((int64_t) bl + (int64_t)offset) >> 2;
+    addr_t br = (addr_t)find_br_address_with_bl_64(0, kernel_buf, kernel_len, bl);
+    if(!br) {
+        printf("%s: Could not find \"vn_getpath\" br insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vn_getpath\" br insn at %p\n", __FUNCTION__,(void*)(br));
+    return br;
 }
 
 addr_t get_sb_evaluate_offset(void* kernel_buf,size_t kernel_len) {
