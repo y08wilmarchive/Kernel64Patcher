@@ -527,6 +527,253 @@ int get_sandbox_trace_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+addr_t get_sb_evaluate(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    char* str = "rootless_entitlement";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
+    if(!ent_loc) {
+        printf("%s: Could not find \"rootless_entitlement\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"rootless_entitlement\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
+    if(!xref_stuff) {
+        printf("%s: Could not find \"rootless_entitlement\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"rootless_entitlement\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
+    if(!beg_func) {
+        printf("%s: Could not find \"rootless_entitlement\" funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"rootless_entitlement\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
+    return beg_func;
+}
+
+addr_t get_sb_evaluate_hook(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    char* str = "control_name";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
+    if(!ent_loc) {
+        printf("%s: Could not find \"control_name\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"control_name\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
+    if(!xref_stuff) {
+        printf("%s: Could not find \"control_name\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"control_name\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
+    if(!beg_func) {
+        printf("%s: Could not find \"control_name\" funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"control_name\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
+    return beg_func;
+}
+
+addr_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search FD 83 00 91 F3 03 02 AA F4 03 01 AA F5 03 00 AA 76 02 40 B9
+    uint8_t search[] = { 0xFD, 0x83, 0x00, 0x91, 0xF3, 0x03, 0x02, 0xAA, 0xF4, 0x03, 0x01, 0xAA, 0xF5, 0x03, 0x00, 0xAA, 0x76, 0x02, 0x40, 0xB9 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vn_getpath_offset\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vn_getpath_offset\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    printf("%s: Found \"vn_getpath_offset\" xref at %p\n\n", __FUNCTION__,(void*)(ent_loc));
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_funcbegin_64);
+    if(!beg_func) {
+        printf("%s: Could not find \"vn_getpath_offset\" funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vn_getpath_offset\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
+    return beg_func;
+}
+
+addr_t get_sb_evaluate_offset(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // rootless_entitlement
+    // %s[%d] Container: %s (sandbox)\n
+    char* str = "rootless_entitlement";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str));
+    if(!ent_loc) {
+        printf("%s: Could not find \"rootless_entitlement\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"rootless_entitlement\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
+    if(!xref_stuff) {
+       printf("%s: Could not find \"sb_evaluate_offset\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sb_evaluate_offset\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t beg_func = bof64(kernel_buf,0,xref_stuff);
+    if(!beg_func) {
+       printf("%s: Could not find \"sb_evaluate_offset\" funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sb_evaluate_offset\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
+    return beg_func;
+}
+
+addr_t get_sb_evaluate_hook_offset(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // control_name
+    char* str = "control_name";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str));
+    if(!ent_loc) {
+        printf("%s: Could not find \"control_name\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"control_name\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
+    if(!xref_stuff) {
+       printf("%s: Could not find \"sb_evaluate_hook\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sb_evaluate_hook\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t beg_func = bof64(kernel_buf,0,xref_stuff);
+    if(!beg_func) {
+       printf("%s: Could not find \"sb_evaluate_hook\" funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sb_evaluate_hook\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
+    return beg_func;
+}
+
+addr_t get_vn_getpath_offset(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search FD 83 00 91 F3 03 02 AA F4 03 01 AA F5 03 00 AA 76 02 40 B9
+    uint8_t search[] = { 0xFD, 0x83, 0x00, 0x91, 0xF3, 0x03, 0x02, 0xAA, 0xF4, 0x03, 0x01, 0xAA, 0xF5, 0x03, 0x00, 0xAA, 0x76, 0x02, 0x40, 0xB9 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vn_getpath_offset\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vn_getpath_offset\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vn_getpath_offset\" xref at %p\n\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t beg_func = bof64(kernel_buf,0,xref_stuff);
+    if(!beg_func) {
+       printf("%s: Could not find \"vn_getpath_offset\" funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vn_getpath_offset\" funcbegin insn at %p\n\n", __FUNCTION__,(void*)(beg_func));
+    return beg_func;
+}
+
+// iOS 8.4 arm64 taig
+int get_sandbox_patch_ios84_taig(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // Extracted from Taig 8.4 jailbreak (thanks @in7egral)
+    printf("%s: hit 1 ...\n",__FUNCTION__);
+    uint8_t payload[0x190] = {
+        0xFD, 0x7B, 0xBF, 0xA9, 0xFD, 0x03, 0x00, 0x91, 0xF4, 0x4F, 0xBF, 0xA9, 0xF6, 0x57, 0xBF, 0xA9,
+        0xFF, 0x43, 0x10, 0xD1, 0xF3, 0x03, 0x00, 0xAA, 0xF4, 0x03, 0x01, 0xAA, 0xF5, 0x03, 0x02, 0xAA,
+        0xF6, 0x03, 0x03, 0xAA, 0xC0, 0x26, 0x40, 0xF9, 0x1F, 0x04, 0x00, 0xF1, 0x41, 0x04, 0x00, 0x54,
+        0xC0, 0x2A, 0x40, 0xF9, 0x00, 0x04, 0x00, 0xB4, 0x1F, 0x20, 0x03, 0xD5, 0xE1, 0x03, 0x00, 0x91,
+        0xE2, 0x03, 0x10, 0x91, 0x03, 0x80, 0x80, 0xD2, 0x43, 0x00, 0x00, 0xF9, 0x11, 0x11, 0x11, 0x11,
+        0xE3, 0x03, 0x16, 0xAA, 0x00, 0x03, 0x00, 0xB5, 0xE0, 0x03, 0x00, 0x91, 0x81, 0x05, 0x00, 0x10,
+        0x1E, 0x00, 0x00, 0x94, 0x80, 0x02, 0x00, 0xB4, 0xE0, 0x03, 0x00, 0x91, 0x81, 0x05, 0x00, 0x30,
+        0x1A, 0x00, 0x00, 0x94, 0x20, 0x01, 0x00, 0xB5, 0xE0, 0x03, 0x00, 0x91, 0xA1, 0x05, 0x00, 0x30,
+        0x16, 0x00, 0x00, 0x94, 0x80, 0x01, 0x00, 0xB4, 0xE0, 0x03, 0x00, 0x91, 0xA1, 0x06, 0x00, 0x70,
+        0x12, 0x00, 0x00, 0x94, 0x00, 0x01, 0x00, 0xB5, 0x00, 0x03, 0x80, 0xD2, 0x00, 0x7C, 0x60, 0xD3,
+        0xFF, 0x43, 0x10, 0x91, 0xF6, 0x57, 0xC1, 0xA8, 0xF4, 0x4F, 0xC1, 0xA8, 0xFD, 0x7B, 0xC1, 0xA8,
+        0xC0, 0x03, 0x5F, 0xD6, 0xE0, 0x03, 0x13, 0xAA, 0xE1, 0x03, 0x14, 0xAA, 0xE2, 0x03, 0x15, 0xAA,
+        0xFF, 0x43, 0x10, 0x91, 0xF6, 0x57, 0xC1, 0xA8, 0xF4, 0x4F, 0xC1, 0xA8, 0xFD, 0x7B, 0xC1, 0xA8,
+        0xCC, 0xCC, 0xCC, 0xCC, 0xDD, 0xDD, 0xDD, 0xDD, 0x04, 0x00, 0x40, 0x39, 0x25, 0x00, 0x40, 0x39,
+        0x25, 0x01, 0x00, 0x34, 0x9F, 0x00, 0x05, 0x6B, 0xA1, 0x00, 0x00, 0x54, 0xC4, 0x00, 0x00, 0x34,
+        0x00, 0x04, 0x00, 0x91, 0x21, 0x04, 0x00, 0x91, 0xF8, 0xFF, 0xFF, 0x17, 0x20, 0x00, 0x80, 0x52,
+        0xC0, 0x03, 0x5F, 0xD6, 0x00, 0x00, 0x80, 0x52, 0xC0, 0x03, 0x5F, 0xD6, 0x2F, 0x70, 0x72, 0x69,
+        0x76, 0x61, 0x74, 0x65, 0x2F, 0x76, 0x61, 0x72, 0x2F, 0x74, 0x6D, 0x70, 0x00, 0x2F, 0x70, 0x72,
+        0x69, 0x76, 0x61, 0x74, 0x65, 0x2F, 0x76, 0x61, 0x72, 0x2F, 0x6D, 0x6F, 0x62, 0x69, 0x6C, 0x65,
+        0x00, 0x2F, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x2F, 0x76, 0x61, 0x72, 0x2F, 0x6D, 0x6F,
+        0x62, 0x69, 0x6C, 0x65, 0x2F, 0x4C, 0x69, 0x62, 0x72, 0x61, 0x72, 0x79, 0x2F, 0x50, 0x72, 0x65,
+        0x66, 0x65, 0x72, 0x65, 0x6E, 0x63, 0x65, 0x73, 0x2F, 0x63, 0x6F, 0x6D, 0x2E, 0x61, 0x70, 0x70,
+        0x6C, 0x65, 0x00, 0x2F, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x2F, 0x76, 0x61, 0x72, 0x2F,
+        0x6D, 0x6F, 0x62, 0x69, 0x6C, 0x65, 0x2F, 0x4C, 0x69, 0x62, 0x72, 0x61, 0x72, 0x79, 0x2F, 0x50,
+        0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6E, 0x63, 0x65, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+    
+    printf("%s: hit 2 ...\n",__FUNCTION__);
+    uint32_t sb_evaluate_hook = get_sb_evaluate_hook(kernel_buf, kernel_len);
+
+    printf("%s: hit 3 ...\n",__FUNCTION__);
+
+    uint32_t sb_evaluate = get_sb_evaluate(kernel_buf, kernel_len);
+        printf("%s: hit 4 ...\n",__FUNCTION__);
+
+
+    uint32_t vn_getpath = get_vn_getpath_offset(kernel_buf, kernel_len);
+        printf("%s: hit 5 ...\n",__FUNCTION__);
+
+    
+    uint32_t sb_evaluate_hook_offset = get_sb_evaluate_hook_offset(kernel_buf, kernel_len);
+        printf("%s: hit 6 ...\n",__FUNCTION__);
+
+
+    uint32_t sb_evaluate_offset = get_sb_evaluate_offset(kernel_buf, kernel_len);
+        printf("%s: hit 7 ...\n",__FUNCTION__);
+
+    
+    uint32_t vn_getpath_offset = get_vn_getpath_offset(kernel_buf, kernel_len);
+    
+        printf("%s: hit 8 ...\n",__FUNCTION__);
+
+    
+    uint32_t vn_getpath_for_arm_assembling = vn_getpath + 0xFFFF000;
+    uint32_t sb_evaluate_for_arm_assembling = sb_evaluate + 0xFFFF004;
+    
+        printf("%s: hit 9 ...\n",__FUNCTION__);
+
+    
+    uint32_t *payloadAsUint32 = (uint32_t *)payload;
+    uint32_t patchValue;
+    
+    for ( uint32_t i = 0; i < 0x190; ++i )
+    {
+        uint32_t dataOffset = payloadAsUint32[i];
+        switch ( dataOffset )
+        {
+            case 0xCCCCCCCC:
+                patchValue = 0xA9BA6FFC; // stolen bytes from sb_evaluate (kernel 8.4.1)
+                payloadAsUint32[i] = patchValue;
+                break;
+            case 0xDDDDDDDD:
+                patchValue = (sb_evaluate_for_arm_assembling >> 2) & 0x3FFFFFF | 0x14000000;
+                payloadAsUint32[i] = patchValue;
+                break;
+            case 0x11111111:
+                patchValue = (vn_getpath_for_arm_assembling >> 2) & 0x3FFFFFF | 0x94000000;
+                payloadAsUint32[i] = patchValue;
+                break;
+        }
+        vn_getpath_for_arm_assembling -= 4;
+        sb_evaluate_for_arm_assembling -= 4;
+    }
+        printf("%s: hit 10 ...\n",__FUNCTION__);
+    uint64_t offset = sb_evaluate_hook_offset;
+    uint32_t count = sizeof(payload) / sizeof(uint32_t);
+    for(uint32_t i=0; i < count; ++i)
+    {
+        printf("%s: Patching \"sandbox\" at %p\n\n", __FUNCTION__,(void*)(offset));
+        *(uint32_t *) (kernel_buf + offset) = payloadAsUint32[i];
+        offset += sizeof(uint32_t);
+    }
+                printf("%s: hit 11 ...\n",__FUNCTION__);
+
+    uint32_t branch_instr = (sb_evaluate_hook - sb_evaluate) >> 2 & 0x3FFFFFF | 0x14000000;
+    *(uint32_t *) (kernel_buf + sb_evaluate_offset) = branch_instr;
+            printf("%s: hit 12 ...\n",__FUNCTION__);
+
+    return 0;
+}
+
 int main(int argc, char **argv) {
     
     printf("%s: Starting...\n", __FUNCTION__);
@@ -543,6 +790,7 @@ int main(int argc, char **argv) {
         printf("\t-a\t\tPatch map_IO (iOS 8& 9 Only)\n");
         printf("\t-t\t\tPatch tfp0 (iOS 8& 9 Only)\n");
         printf("\t-p\t\tPatch sandbox_trace (iOS 8 Only)\n");
+        printf("\t-g\t\tPatch sandbox (Taig; iOS 8.4 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         
@@ -633,6 +881,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-p") == 0) {
             printf("Kernel: Adding sandbox_trace patch...\n");
             get_sandbox_trace_patch_ios8(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-g") == 0) {
+            printf("Kernel: Adding sandbox patch...\n");
+            get_sandbox_patch_ios84_taig(kernel_buf,kernel_len);
         }
     }
     
