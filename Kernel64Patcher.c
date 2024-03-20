@@ -590,7 +590,14 @@ addr_t get_sb_evaluate_hook(void* kernel_buf,size_t kernel_len) {
     return beg_func;
 }
 
-uint32_t get_vn_getpath_bl(void* kernel_buf,size_t kernel_len) {
+int64_t sxt64(int64_t value, uint8_t bits)
+{
+    value = ((uint64_t)value) << (64 - bits);
+    value >>= (64 - bits);
+    return value;
+}
+
+addr_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // %s: vn_getpath returned 0x%x\n and find last bl
     char* str = "%s: vn_getpath returned 0x%x\n";
@@ -606,13 +613,19 @@ uint32_t get_vn_getpath_bl(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"vn_getpath\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    uint32_t bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_bl_64);
+    addr_t bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_bl_64);
     if(!bl) {
         printf("%s: Could not find \"vn_getpath\" bl insn\n",__FUNCTION__);
         return -1;
     }
     printf("%s: Found \"vn_getpath\" bl insn at %p\n", __FUNCTION__,(void*)(bl));
-    return bl;
+    addr_t blo = (addr_t)GET_OFFSET(kernel_len, bl);
+    uint32_t inst = (uint32_t *) (kernel_buf + blo);
+    int64_t offset = sxt64((inst & 0x3ffffff), 26);
+    printf("%s: Found \"vn_getpath\" funcbegin insn at %p\n", __FUNCTION__,(void*)((int64_t) bl + (int64_t)offset));
+    // sub_ffffff800268dcf0
+    //patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x94000000;
+    return ((int64_t) bl + ((int64_t)offset * 2)) << 2;
 }
 
 addr_t get_sb_evaluate_offset(void* kernel_buf,size_t kernel_len) {
@@ -721,8 +734,10 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     };
     uint32_t sb_evaluate_hook = get_sb_evaluate_hook(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
     uint32_t sb_evaluate = get_sb_evaluate(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+    uint32_t vn_getpath = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
     uint32_t sb_evaluate_hook_offset = get_sb_evaluate_hook_offset(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64& GET_OFFSET
     uint32_t sb_evaluate_offset = get_sb_evaluate_offset(kernel_buf, kernel_len); // xref& bof64
+    uint32_t vn_getpath_offset = get_vn_getpath_offset(kernel_buf, kernel_len); // xref& bof64
     uint32_t *payloadAsUint32 = (uint32_t *)payload;
     uint32_t patchValue;
     uint64_t offset = get_sb_evaluate_hook(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
@@ -747,7 +762,10 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
             payloadAsUint32[i] = patchValue;
         } else if (dataOffset == 0x11111111) {
             // bl call to the vn_getpath function
-            patchValue = get_vn_getpath_bl(kernel_buf, kernel_len);
+            bool isBl = true;
+            uint64_t origin = offset;
+            uint64_t target = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+            patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x94000000;
             payloadAsUint32[i] = patchValue;
         }
         offset += sizeof(uint32_t);
