@@ -750,7 +750,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
             payloadAsUint32[i] = patchValue;
         } else if (dataOffset == 0x11111111) {
             // bl call to the vn_getpath function
-            patchValue = (uint32_t *) (kernel_buf + get_vn_getpath(kernel_buf, kernel_len));
+            patchValue = (uint32_t *) (kernel_buf + get_vn_getpath_bl(kernel_buf, kernel_len));
             payloadAsUint32[i] = patchValue;
         }
         offset += sizeof(uint32_t);
