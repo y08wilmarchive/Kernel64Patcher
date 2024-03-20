@@ -735,16 +735,20 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
             payloadAsUint32[i] = patchValue;
         } else if (dataOffset == 0xDDDDDDDD) {
             // b unconditional call to the sb_evaluate function
-            int64_t target = (int64_t)sb_evaluate - (int64_t)offset;
-            target = target / 4;
-            uint32_t bl_instr = target & 0x3FFFFFF | 0x14000000;
-            payloadAsUint32[i] = bl_instr;
+            bool isBl = false;
+            uint64_t origin = offset;
+            uint64_t target = (uint64_t)sb_evaluate;
+            int64_t instr_offset = ((int64_t)target - (int64_t)origin) / 4;
+            uint32_t b_instr = (isBl ? 0x94000000 : 0x14000000) | (uint32_t)(instr_offset & 0x3ffffff);
+            payloadAsUint32[i] = b_instr;
         } else if (dataOffset == 0x11111111) {
             // bl call to the vn_getpath function
-            int64_t target = (int64_t)vn_getpath - (int64_t)offset;
-            target = target / 4;
-            uint32_t b_instr = target & 0x3FFFFFF | 0x94000000;
-            payloadAsUint32[i] = b_instr;
+            bool isBl = true;
+            uint64_t origin = offset;
+            uint64_t target = (uint64_t)vn_getpath;
+            int64_t instr_offset = ((int64_t)target - (int64_t)origin) / 4;
+            uint32_t bl_instr = (isBl ? 0x94000000 : 0x14000000) | (uint32_t)(instr_offset & 0x3ffffff);
+            payloadAsUint32[i] = bl_instr;
         }
         offset += sizeof(uint32_t);
     }
