@@ -726,7 +726,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     // vn_getpath ffffff800210b78c
     // sb_evaluate_hook > sb_evaluate
     // vn_getpath < sb_evaluate_hook
-    uint64_t origin = (uint64_t)sb_evaluate_hook_offset;
+    uint32_t origin = (uint32_t)sb_evaluate_hook_offset;
     for ( uint32_t i = 0; i < 0x190; ++i )
     {
         uint32_t dataOffset = payloadAsUint32[i];
@@ -743,16 +743,16 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
                 break;
             case 0xDDDDDDDD:
                 // b unconditional call to the sb_evaluate function
-                uint64_t target = (uint64_t)sb_evaluate;
-                int64_t offset = ((int64_t)target - (int64_t)origin) / 4;
+                uint32_t target = (uint32_t)sb_evaluate;
+                int32_t offset = ((int32_t)target - (int32_t)origin) / 4;
                 bool isBl = false;
                 uint32_t branch_instr = (isBl ? 0x94000000 : 0x14000000) | (uint32_t)(offset & 0x3ffffff);
                 payloadAsUint32[i] = branch_instr;
                 break;
             case 0x11111111:
                 // bl call to the vn_getpath function
-                uint64_t target = (uint64_t)vn_getpath;
-                int64_t offset = ((int64_t)target - (int64_t)origin) / 4;
+                uint32_t target = (uint32_t)vn_getpath;
+                int32_t offset = ((int32_t)target - (int32_t)origin) / 4;
                 bool isBl = true;
                 uint32_t branch_instr = (isBl ? 0x94000000 : 0x14000000) | (uint32_t)(offset & 0x3ffffff);
                 payloadAsUint32[i] = branch_instr;
