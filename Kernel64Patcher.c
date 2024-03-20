@@ -667,11 +667,10 @@ addr_t get_vn_getpath_offset(void* kernel_buf,size_t kernel_len) {
     return beg_func;
 }
 
-// iOS 8.4 arm64 taig
-int get_sandbox_patch_ios84_taig(void* kernel_buf,size_t kernel_len) {
+// iOS 8 arm64
+int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // Extracted from Taig 8.4 jailbreak (thanks @in7egral)
-    printf("%s: hit 1 ...\n",__FUNCTION__);
     uint8_t payload[0x190] = {
         0xFD, 0x7B, 0xBF, 0xA9, 0xFD, 0x03, 0x00, 0x91, 0xF4, 0x4F, 0xBF, 0xA9, 0xF6, 0x57, 0xBF, 0xA9,
         0xFF, 0x43, 0x10, 0xD1, 0xF3, 0x03, 0x00, 0xAA, 0xF4, 0x03, 0x01, 0xAA, 0xF5, 0x03, 0x02, 0xAA,
@@ -699,50 +698,23 @@ int get_sandbox_patch_ios84_taig(void* kernel_buf,size_t kernel_len) {
         0x6D, 0x6F, 0x62, 0x69, 0x6C, 0x65, 0x2F, 0x4C, 0x69, 0x62, 0x72, 0x61, 0x72, 0x79, 0x2F, 0x50,
         0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6E, 0x63, 0x65, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
-    
-    printf("%s: hit 2 ...\n",__FUNCTION__);
     uint32_t sb_evaluate_hook = get_sb_evaluate_hook(kernel_buf, kernel_len);
-
-    printf("%s: hit 3 ...\n",__FUNCTION__);
-
     uint32_t sb_evaluate = get_sb_evaluate(kernel_buf, kernel_len);
-        printf("%s: hit 4 ...\n",__FUNCTION__);
-
-
     uint32_t vn_getpath = get_vn_getpath(kernel_buf, kernel_len);
-        printf("%s: hit 5 ...\n",__FUNCTION__);
-
-    
     uint32_t sb_evaluate_hook_offset = get_sb_evaluate_hook_offset(kernel_buf, kernel_len);
-        printf("%s: hit 6 ...\n",__FUNCTION__);
-
-
     uint32_t sb_evaluate_offset = get_sb_evaluate_offset(kernel_buf, kernel_len);
-        printf("%s: hit 7 ...\n",__FUNCTION__);
-
-    
     uint32_t vn_getpath_offset = get_vn_getpath_offset(kernel_buf, kernel_len);
-    
-        printf("%s: hit 8 ...\n",__FUNCTION__);
-
-    
     uint32_t vn_getpath_for_arm_assembling = vn_getpath + 0xFFFF000;
     uint32_t sb_evaluate_for_arm_assembling = sb_evaluate + 0xFFFF004;
-    
-        printf("%s: hit 9 ...\n",__FUNCTION__);
-
-    
     uint32_t *payloadAsUint32 = (uint32_t *)payload;
     uint32_t patchValue;
-    
     for ( uint32_t i = 0; i < 0x190; ++i )
     {
         uint32_t dataOffset = payloadAsUint32[i];
         switch ( dataOffset )
         {
             case 0xCCCCCCCC:
-                patchValue = 0xA9BA6FFC; // stolen bytes from sb_evaluate (kernel 8.4.1)
-                payloadAsUint32[i] = patchValue;
+                payloadAsUint32[i] = *(uint32_t *) (kernel_buf + sb_evaluate_offset);
                 break;
             case 0xDDDDDDDD:
                 patchValue = (sb_evaluate_for_arm_assembling >> 2) & 0x3FFFFFF | 0x14000000;
@@ -756,7 +728,6 @@ int get_sandbox_patch_ios84_taig(void* kernel_buf,size_t kernel_len) {
         vn_getpath_for_arm_assembling -= 4;
         sb_evaluate_for_arm_assembling -= 4;
     }
-        printf("%s: hit 10 ...\n",__FUNCTION__);
     uint64_t offset = sb_evaluate_hook_offset;
     uint32_t count = sizeof(payload) / sizeof(uint32_t);
     for(uint32_t i=0; i < count; ++i)
@@ -765,12 +736,8 @@ int get_sandbox_patch_ios84_taig(void* kernel_buf,size_t kernel_len) {
         *(uint32_t *) (kernel_buf + offset) = payloadAsUint32[i];
         offset += sizeof(uint32_t);
     }
-                printf("%s: hit 11 ...\n",__FUNCTION__);
-
     uint32_t branch_instr = (sb_evaluate_hook - sb_evaluate) >> 2 & 0x3FFFFFF | 0x14000000;
     *(uint32_t *) (kernel_buf + sb_evaluate_offset) = branch_instr;
-            printf("%s: hit 12 ...\n",__FUNCTION__);
-
     return 0;
 }
 
@@ -790,7 +757,7 @@ int main(int argc, char **argv) {
         printf("\t-a\t\tPatch map_IO (iOS 8& 9 Only)\n");
         printf("\t-t\t\tPatch tfp0 (iOS 8& 9 Only)\n");
         printf("\t-p\t\tPatch sandbox_trace (iOS 8 Only)\n");
-        printf("\t-g\t\tPatch sandbox (Taig; iOS 8.4 Only)\n");
+        printf("\t-g\t\tPatch sandbox (iOS 8 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         
@@ -884,7 +851,7 @@ int main(int argc, char **argv) {
         }
         if(strcmp(argv[i], "-g") == 0) {
             printf("Kernel: Adding sandbox patch...\n");
-            get_sandbox_patch_ios84_taig(kernel_buf,kernel_len);
+            get_sandbox_patch_ios8(kernel_buf,kernel_len);
         }
     }
     
