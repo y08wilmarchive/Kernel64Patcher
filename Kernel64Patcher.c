@@ -13,6 +13,7 @@
 #include "patchfinder64_friedappleteam.c"
 
 #define GET_OFFSET(kernel_len, x) (x - (uintptr_t) kernel_buf)
+#define GET_OFFSET2(kernel_len, x) (x + (uintptr_t) kernel_buf)
 
 #define LSL0 0
 #define LSL16 16
@@ -706,14 +707,39 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
         0x6D, 0x6F, 0x62, 0x69, 0x6C, 0x65, 0x2F, 0x4C, 0x69, 0x62, 0x72, 0x61, 0x72, 0x79, 0x2F, 0x50,
         0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6E, 0x63, 0x65, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
-    uint32_t sb_evaluate_hook = get_sb_evaluate_hook(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
     uint32_t sb_evaluate = get_sb_evaluate(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
     uint32_t vn_getpath = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
-    uint32_t sb_evaluate_hook_offset = get_sb_evaluate_hook_offset(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64& GET_OFFSET
     uint32_t sb_evaluate_offset = get_sb_evaluate_offset(kernel_buf, kernel_len); // xref& bof64
     uint32_t *payloadAsUint32 = (uint32_t *)payload;
     uint32_t patchValue;
-    uint64_t offset = get_sb_evaluate_hook(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+    char* str = "virtual bool AppleSEPManager::start(IOService *)";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
+    if(!ent_loc) {
+        printf("%s: Could not find \"virtual bool AppleSEPManager::start(IOService *)\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"virtual bool AppleSEPManager::start(IOService *)\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
+    if(!xref_stuff) {
+        printf("%s: Could not find \"virtual bool AppleSEPManager::start(IOService *)\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"virtual bool AppleSEPManager::start(IOService *)\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
+    if(!beg_func) {
+        printf("%s: Could not find \"virtual bool AppleSEPManager::start(IOService *)\" funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"virtual bool AppleSEPManager::start(IOService *)\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    beg_func = (addr_t)GET_OFFSET(kernel_len, beg_func);
+    *(uint32_t *) (kernel_buf + beg_func) = 0x52800000;
+    *(uint32_t *) (kernel_buf + beg_func + 0x4) = 0xD65F03C0;
+    beg_func = beg_func + 0x4;
+    beg_func = beg_func + 0x4;
+    uint64_t sb_evaluate_hook_offset = beg_func;
+    beg_func = (addr_t)GET_OFFSET2(kernel_len, (uintptr_t)beg_func);
+    uint32_t sb_evaluate_hook = beg_func;
+    uint64_t offset = beg_func;
     for ( uint32_t i = 0; i < 0x190; ++i )
     {
         uint32_t dataOffset = payloadAsUint32[i];
