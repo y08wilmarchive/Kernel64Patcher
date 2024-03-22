@@ -657,7 +657,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // Extracted from Taig 8.4 jailbreak (thanks @in7egral)
     // it replaces the first instruction in the sandbox evaluate function in the kernel with a branch instruction that jumps to a function we create. this function we create should look at the path and force it to bypass sandbox by returning 0x1800000000 if it is outside of /private/var/mobile, or inside of /private/var/mobile/Library/Preferences but not /private/var/mobile/Library/Preferences/com.apple* but otherwise at the very end of our function it does two things, one it runs the first instruction from the sandbox evaluate function that was present from before we modified it earlier and then two it has another branch instruction but this time it branches back to the original sandbox evaluate function from apple but at funcbegin+1 aka the second line of the function, thereby skipping the branch instruction from earlier that allowed us to run our function. it notably has to also call the _vn_getpath function from our custom function, so in all it means we need a payload, _vn_getpath patchfinder, and a sb_eval patchfinder for any of this to work
-    uint8_t payload[0x190] = {
+    uint8_t payload2[0x190] = {
         0xFD, 0x7B, 0xBF, 0xA9, 0xFD, 0x03, 0x00, 0x91, 0xF4, 0x4F, 0xBF, 0xA9, 0xF6, 0x57, 0xBF, 0xA9,
         0xFF, 0x43, 0x10, 0xD1, 0xF3, 0x03, 0x00, 0xAA, 0xF4, 0x03, 0x01, 0xAA, 0xF5, 0x03, 0x02, 0xAA,
         0xF6, 0x03, 0x03, 0xAA, 0xC0, 0x26, 0x40, 0xF9, 0x1F, 0x04, 0x00, 0xF1, 0x41, 0x04, 0x00, 0x54,
@@ -684,6 +684,7 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
         0x6D, 0x6F, 0x62, 0x69, 0x6C, 0x65, 0x2F, 0x4C, 0x69, 0x62, 0x72, 0x61, 0x72, 0x79, 0x2F, 0x50,
         0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6E, 0x63, 0x65, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
+    uint8_t payload[] = { 0x00, 0x03, 0x80, 0xd2, 0x00, 0x7c, 0x60, 0xd3, 0xff, 0x43, 0x10, 0x91, 0xf6, 0x57, 0xc1, 0xa8, 0xf4, 0x4f, 0xc1, 0xa8, 0xfd, 0x7b, 0xc1, 0xa8, 0xc0, 0x03, 0x5f, 0xd6 };
     // int64_t sub_ffffff8002ccd160(void* arg1, int64_t* arg2, int32_t arg3, void* arg4)
     // stp x29, x30, [sp, #-0x10]!
     // mov x29, sp
@@ -788,7 +789,8 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     beg_func = (addr_t)GET_OFFSET2(kernel_len, (uintptr_t)beg_func); // kernel offset which we need in order to create bl or b calls
     uint32_t sb_evaluate_hook = beg_func;
     uint64_t offset = beg_func;
-    for ( uint32_t i = 0; i < 0x190; ++i )
+    uint32_t count = sizeof(payload) / sizeof(uint32_t);
+    for(uint32_t i=0; i < count; ++i)
     {
         uint32_t dataOffset = payloadAsUint32[i];
         if (dataOffset == 0xCCCCCCCC) { // second to last line of our payload function
@@ -800,14 +802,14 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
             patchValue = 0xA9BA6FFC; // first insn in the sb_evaluate function from before we modified it
             // so basically here we are running the instruction from the sb_evaluate function that we removed from earlier
             payloadAsUint32[i] = patchValue;
-        } else if (dataOffset == 0xDDDDDDDD) {
+        } else if (dataOffset == 0xDDDDDDDD) { // last line of our payload function
             // b unconditional call to the sb_evaluate function
             uint64_t origin = offset;
             uint64_t target = get_sb_evaluate(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
             target = target + 0x4; // skip to next line
             patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x14000000; // 0x14000000 is b
             payloadAsUint32[i] = patchValue;
-        } else if (dataOffset == 0x11111111) {
+        } else if (dataOffset == 0x11111111) { // vn_getpath
             // bl call to the vn_getpath function
             uint64_t origin = offset;
             int64_t target = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
@@ -818,7 +820,6 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     }
     // insert payload starting at funcbegin insn for the sb_evaluate_hook function
     offset = sb_evaluate_hook_offset;
-    uint32_t count = sizeof(payload) / sizeof(uint32_t);
     for(uint32_t i=0; i < count; ++i)
     {
         printf("%s: Patching \"sandbox\" at %p\n", __FUNCTION__,(void*)(offset));
