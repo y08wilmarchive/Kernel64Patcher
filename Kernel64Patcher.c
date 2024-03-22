@@ -712,26 +712,26 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     uint32_t sb_evaluate_offset = get_sb_evaluate_offset(kernel_buf, kernel_len); // xref& bof64
     uint32_t *payloadAsUint32 = (uint32_t *)payload;
     uint32_t patchValue;
-    char* str = "virtual bool AppleSEPManager::start(IOService *)";
+    char* str = "_sep_panic_timer != NULL";
     void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
     if(!ent_loc) {
         printf("%s: Could not find \"virtual bool AppleSEPManager::start(IOService *)\" string\n",__FUNCTION__);
         return -1;
     }
     printf("%s: Found \"virtual bool AppleSEPManager::start(IOService *)\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
     if(!xref_stuff) {
         printf("%s: Could not find \"virtual bool AppleSEPManager::start(IOService *)\" xref\n",__FUNCTION__);
         return -1;
     }
     printf("%s: Found \"virtual bool AppleSEPManager::start(IOService *)\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    addr_t beg_func = bof64(kernel_buf,0,xref_stuff);
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
     if(!beg_func) {
         printf("%s: Could not find \"virtual bool AppleSEPManager::start(IOService *)\" funcbegin insn\n",__FUNCTION__);
         return -1;
     }
     printf("%s: Found \"virtual bool AppleSEPManager::start(IOService *)\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
-    //beg_func = (addr_t)GET_OFFSET(kernel_len, beg_func);
+    beg_func = (addr_t)GET_OFFSET(kernel_len, beg_func);
     *(uint32_t *) (kernel_buf + beg_func) = 0x52800000;
     *(uint32_t *) (kernel_buf + beg_func + 0x4) = 0xD65F03C0;
     beg_func = beg_func + 0x4;
