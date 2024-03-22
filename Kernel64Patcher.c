@@ -506,7 +506,7 @@ int get_sandbox_trace_patch_ios8(void* kernel_buf,size_t kernel_len) {
     // search E8 37 40 F9 1F 00 00 71
     // ldr x8, [sp, #0x68]
     // cmp w0, #0
-    uint8_t search[] = { 0x00, 0x01, 0x40, 0xB9, 0x15, 0x09, 0x40, 0xB9, 0x13, 0x09, 0x40, 0xF9 };
+    uint8_t search[] = { 0xE8, 0x37, 0x40, 0xF9, 0x1F, 0x00, 0x00, 0x71 };
     void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
     if (!ent_loc) {
         printf("%s: Could not find \"sandbox_trace\" patch\n",__FUNCTION__);
