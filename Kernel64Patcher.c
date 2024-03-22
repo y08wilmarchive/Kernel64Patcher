@@ -567,30 +567,6 @@ addr_t get_sb_evaluate(void* kernel_buf,size_t kernel_len) {
     return beg_func;
 }
 
-addr_t get_sb_evaluate_hook(void* kernel_buf,size_t kernel_len) {
-    printf("%s: Entering ...\n",__FUNCTION__);
-    char* str = "bad regex index";
-    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
-    if(!ent_loc) {
-        printf("%s: Could not find \"control_name\" string\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"control_name\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
-    if(!xref_stuff) {
-        printf("%s: Could not find \"control_name\" xref\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"control_name\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
-    if(!beg_func) {
-        printf("%s: Could not find \"control_name\" funcbegin insn\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"control_name\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
-    return beg_func;
-}
-
 int64_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // %s: vn_getpath returned 0x%x\n and find last bl
@@ -650,36 +626,11 @@ addr_t get_sb_evaluate_offset(void* kernel_buf,size_t kernel_len) {
     return beg_func;
 }
 
-addr_t get_sb_evaluate_hook_offset(void* kernel_buf,size_t kernel_len) {
-    printf("%s: Entering ...\n",__FUNCTION__);
-    // control_name
-    char* str = "bad regex index";
-    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str));
-    if(!ent_loc) {
-        printf("%s: Could not find \"control_name\" string\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"control_name\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
-    if(!xref_stuff) {
-        printf("%s: Could not find \"control_name\" xref\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"control_name\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
-    if(!beg_func) {
-        printf("%s: Could not find \"control_name\" funcbegin insn\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"control_name\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
-    beg_func = (addr_t)GET_OFFSET(kernel_len, beg_func);
-    return beg_func;
-}
-
 // iOS 8 arm64
 int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // Extracted from Taig 8.4 jailbreak (thanks @in7egral)
+    // it replaces the first instruction in the sandbox evaluate function in the kernel with a branch instruction that jumps to a function we create. this function we create should look at the path and force it to bypass sandbox by returning 0x1800000000 if it is outside of /private/var/mobile, or inside of /private/var/mobile/Library/Preferences but not /private/var/mobile/Library/Preferences/com.apple* but otherwise at the very end of our function it does two things, one it runs the first instruction from the sandbox evaluate function that was present from before we modified it earlier and then two it has another branch instruction but this time it branches back to the original sandbox evaluate function from apple but at funcbegin+1 aka the second line of the function, thereby skipping the branch instruction from earlier that allowed us to run our function. it notably has to also call the _vn_getpath function from our custom function, so in all it means we need a payload, _vn_getpath patchfinder, and a sb_eval patchfinder for any of this to work
     uint8_t payload[0x190] = {
         0xFD, 0x7B, 0xBF, 0xA9, 0xFD, 0x03, 0x00, 0x91, 0xF4, 0x4F, 0xBF, 0xA9, 0xF6, 0x57, 0xBF, 0xA9,
         0xFF, 0x43, 0x10, 0xD1, 0xF3, 0x03, 0x00, 0xAA, 0xF4, 0x03, 0x01, 0xAA, 0xF5, 0x03, 0x02, 0xAA,
@@ -707,12 +658,81 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
         0x6D, 0x6F, 0x62, 0x69, 0x6C, 0x65, 0x2F, 0x4C, 0x69, 0x62, 0x72, 0x61, 0x72, 0x79, 0x2F, 0x50,
         0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6E, 0x63, 0x65, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
+    // int64_t sub_ffffff8002ccd160(void* arg1, int64_t* arg2, int32_t arg3, void* arg4)
+    // stp x29, x30, [sp, #-0x10]!
+    // mov x29, sp
+    // stp x20, x19, [sp, #-0x10]!
+    // stp x22, x21, [sp, #-0x10]!
+    // sub sp, sp, #0x410
+    // mov x19, x0
+    // mov x20, x1
+    // mov x21, x2
+    // mov x22, x3
+    // ldr x0, [x22, #0x48]
+    // cmp x0, #0x1
+    // b.ne 0xffffff8002ccd214
+    // ldr x0, [x22, #0x50]
+    // cbz x0, 0xffffff8002ccd214
+    // nop
+    // mov x1, sp
+    // add x2, sp, #0x400
+    // mov x3, #0x400
+    // str x3, [x2]
+    // bl 0xffffff800268dcf0 -> _vn_getpath
+    // mov x3, x22
+    // cbnz x0, 0xffffff8002ccd214
+    // mov x0, sp
+    // adr x1, 0xffffff8002ccd26c -> /private/var/tmp
+    // bl 0xffffff8002ccd238 -> sub_ffffff8002ccd238
+    // cbz x0, 0xffffff8002ccd214
+    // mov x0, sp
+    // adr x1, 0xffffff8002ccd27d -> /private/var/mobile
+    // bl 0xffffff8002ccd238 -> sub_ffffff8002ccd238
+    // cbnz x0, 0xffffff8002ccd1f8
+    // mov x0, sp
+    // adr x1, 0xffffff8002ccd291 -> /private/var/mobile/Library/Preferences/com.apple
+    // bl 0xffffff8002ccd238 -> sub_ffffff8002ccd238
+    // cbz x0, 0xffffff8002ccd214
+    // mov x0, sp
+    // adr x1, 0xffffff8002ccd2c3 -> /private/var/mobile/Library/Preferences
+    // bl 0xffffff8002ccd238 -> sub_ffffff8002ccd238
+    // cbnz x0, 0xffffff8002ccd214
+    // mov x0, #0x18
+    // lsl x0, x0, #0x20
+    // add sp, sp, #0x410
+    // ldp x22, x21, [sp], #0x10
+    // ldp x20, x19, [sp], #0x10
+    // ldp x29, x30, [sp], #0x10
+    // ret -> return 0x1800000000
+    // mov x0, x19
+    // mov x1, x20
+    // mov x2, x21
+    // add sp, sp, #0x410
+    // ldp x22, x21, [sp], #0x10
+    // ldp x20, x19, [sp], #0x10
+    // ldp x29, x30, [sp], #0x10
+    // stp x28, x27, [sp, #-0x60]!
+    // b 0xffffff8002cbfd60 -> sb_evaluate funcbegin insn+0x4
+    // int64_t sub_ffffff8002ccd238(char* arg1, char* arg2)
+    // ldrb w4, [x0]
+    // ldrb w5, [x1]
+    // cbz w5, 0xffffff8002ccd264
+    // cmp w4, w5
+    // b.ne 0xffffff8002ccd25c
+    // cbz w4, 0xffffff8002ccd264
+    // add x0, x0, #0x1
+    // add x1, x1, #0x1
+    // b 0xffffff8002ccd238
+    // mov w0, #0x1
+    // ret
+    // mov w0, #0
+    // ret
     uint32_t sb_evaluate = get_sb_evaluate(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
     uint32_t vn_getpath = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
     uint32_t sb_evaluate_offset = get_sb_evaluate_offset(kernel_buf, kernel_len); // xref& bof64
     uint32_t *payloadAsUint32 = (uint32_t *)payload;
     uint32_t patchValue;
-    char* str = "_sep_panic_timer != NULL";
+    char* str = "_sep_panic_timer != NULL"; // virtual bool AppleSEPManager::start(IOService *)
     void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
     if(!ent_loc) {
         printf("%s: Could not find \"virtual bool AppleSEPManager::start(IOService *)\" string\n",__FUNCTION__);
@@ -731,40 +751,41 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"virtual bool AppleSEPManager::start(IOService *)\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
-    beg_func = (addr_t)GET_OFFSET(kernel_len, beg_func);
-    *(uint32_t *) (kernel_buf + beg_func) = 0x52800000;
-    *(uint32_t *) (kernel_buf + beg_func + 0x4) = 0xD65F03C0;
+    beg_func = (addr_t)GET_OFFSET(kernel_len, beg_func); // offset that we use for patching the kernel
+    printf("%s: Patching \"virtual bool AppleSEPManager::start(IOService *)\" at %p\n", __FUNCTION__,(void*)(beg_func));
+    *(uint32_t *) (kernel_buf + beg_func) = 0x52800000; // mov w0, 0x0
     beg_func = beg_func + 0x4;
+    printf("%s: Patching \"virtual bool AppleSEPManager::start(IOService *)\" at %p\n", __FUNCTION__,(void*)(beg_func));
+    *(uint32_t *) (kernel_buf + beg_func) = 0xD65F03C0; // ret
     beg_func = beg_func + 0x4;
     uint64_t sb_evaluate_hook_offset = beg_func;
-    beg_func = (addr_t)GET_OFFSET2(kernel_len, (uintptr_t)beg_func);
+    beg_func = (addr_t)GET_OFFSET2(kernel_len, (uintptr_t)beg_func); // kernel offset which we need in order to create bl or b calls
     uint32_t sb_evaluate_hook = beg_func;
     uint64_t offset = beg_func;
     for ( uint32_t i = 0; i < 0x190; ++i )
     {
         uint32_t dataOffset = payloadAsUint32[i];
-        if (dataOffset == 0xCCCCCCCC) {
+        if (dataOffset == 0xCCCCCCCC) { // second to last line of our payload function
             // ios 9.3.5 a9ba6ffc
             // ios 9.2 a9ba6ffc
             // ios 9.0 a9ba6ffc
             // ios 8.4 a9ba6ffc
             // ios 8.0 a9ba6ffc
-            patchValue = 0xA9BA6FFC; // sb_evaluate funcbegin insn hex value in little endian
+            patchValue = 0xA9BA6FFC; // first insn in the sb_evaluate function from before we modified it
+            // so basically here we are running the instruction from the sb_evaluate function that we removed from earlier
             payloadAsUint32[i] = patchValue;
         } else if (dataOffset == 0xDDDDDDDD) {
             // b unconditional call to the sb_evaluate function
-            bool isBl = false;
             uint64_t origin = offset;
             uint64_t target = get_sb_evaluate(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
             target = target + 0x4; // skip to next line
-            patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x14000000;
+            patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x14000000; // 0x14000000 is b
             payloadAsUint32[i] = patchValue;
         } else if (dataOffset == 0x11111111) {
             // bl call to the vn_getpath function
-            bool isBl = true;
             uint64_t origin = offset;
             int64_t target = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
-            patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x94000000;
+            patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x94000000; // 0x94000000 is bl
             payloadAsUint32[i] = patchValue;
         }
         offset += sizeof(uint32_t);
@@ -778,9 +799,8 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
         *(uint32_t *) (kernel_buf + offset) = payloadAsUint32[i];
         offset += sizeof(uint32_t);
     }
-    // replace the entire sb_evaluate function with a b unconditional call to the sb_evaluate_hook function
-    // sb_evaluate_hook is below sb_evaluate in arm64, so this b instruction is going forward
-    uint32_t branch_instr = (sb_evaluate_hook - sb_evaluate) >> 2 & 0x3FFFFFF | 0x14000000;
+    // replace the first line in the sb_evaluate function with a b unconditional call to our payload
+    uint32_t branch_instr = (sb_evaluate_hook - sb_evaluate) >> 2 & 0x3FFFFFF | 0x14000000; // 0x14000000 is b
     *(uint32_t *) (kernel_buf + sb_evaluate_offset) = branch_instr;
     return 0;
 }
