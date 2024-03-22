@@ -524,7 +524,7 @@ int get_sandbox_trace_patch_ios8(void* kernel_buf,size_t kernel_len) {
         printf("%s: Could not find \"sandbox_trace\" bl insn\n",__FUNCTION__);
         return -1;
     }
-    uint8_t* address = (uint8_t *)bl + insn_bl_imm32_64(insn); // funcbegin
+    uint8_t* address = (uint8_t *)bl + insn_bl_imm32_64(bl); // funcbegin
     bl = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, (uint32_t *)address, insn_is_bl_64);
     if(!bl) {
         printf("%s: Could not find \"sandbox_trace\" bl insn\n",__FUNCTION__);
