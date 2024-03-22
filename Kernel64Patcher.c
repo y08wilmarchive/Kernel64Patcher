@@ -503,43 +503,38 @@ int get_tfp0_patch_ios8(void* kernel_buf,size_t kernel_len) {
 // iOS 8 arm64
 int get_sandbox_trace_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
-    // search 02 10 1F 20 03 D5 08 01 40 39 1F 01 1C 72 E0 17 9F 1A 02 00 00 14 00 00 80 52 FD 7B C1 A8 C0 03 5F D6
-    // e8e202101f2003d5080140391f011c72e0179f1a0200001400008052fd7bc1a8c0035fd6
-    // ... heres two notable lines of code
-    // bl 0xffffff8002c77d94
-    // cbz w0, 0xffffff8002c7677c
-    // ... and now for what we are actually searching for with memmem
-    // adr x8, 0xffffff8002c7c3c0
-    // nop
-    // ldrb w8, [x8]
-    // tst w8, #0x10
-    // cset w0, eq
-    // b 0xffffff8002c76780
-    // mov w0, #0
-    // ldp x29, x30, [sp], #0x10
-    // ret
-    // take note that we are searching by 02 10 and not E8 E2 02 10 at the start
-    // this means to get to the next line we need to add 0x2 not 0x4
-    // we need to make bl 0xffffff8002c77d94 a nop
-    // this makes the function return 0 instead of 1
-    uint8_t search[] = { 0x02, 0x10, 0x1F, 0x20, 0x03, 0xD5, 0x08, 0x01, 0x40, 0x39, 0x1F, 0x01, 0x1C, 0x72, 0xE0, 0x17, 0x9F, 0x1A, 0x02, 0x00, 0x00, 0x14, 0x00, 0x00, 0x80, 0x52, 0xFD, 0x7B, 0xC1, 0xA8, 0xC0, 0x03, 0x5F, 0xD6 };
+    // search E8 37 40 F9 1F 00 00 71
+    // ldr x8, [sp, #0x68]
+    // cmp w0, #0
+    uint8_t search[] = { 0x00, 0x01, 0x40, 0xB9, 0x15, 0x09, 0x40, 0xB9, 0x13, 0x09, 0x40, 0xF9 };
     void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
     if (!ent_loc) {
         printf("%s: Could not find \"sandbox_trace\" patch\n",__FUNCTION__);
         return -1;
     }
     printf("%s: Found \"sandbox_trace\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"sandbox_trace\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Patching \"sandbox_trace\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
-    // we want to make the bl a nop, and the ent_loc starts at adr x8, 0xffffff8002c7c3c0
-    // so we have to add 0x2 to get to the nop on the next line down, then subtract 0x4 3 times to go 3 lines back
-    xref_stuff = xref_stuff + 0x2;
-    xref_stuff = xref_stuff - 0x4;
-    xref_stuff = xref_stuff - 0x4;
-    xref_stuff = xref_stuff - 0x4;
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F;
+    printf("%s: Found \"sandbox_trace\" xref at %p\n", __FUNCTION__,(void*)(ent_loc));
+    addr_t cbz = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_cbz_64);
+    if(!cbz) {
+        printf("%s: Could not find \"sandbox_trace\" cbz insn\n",__FUNCTION__);
+        return -1;
+    }
+    addr_t bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, cbz, insn_is_bl_64);
+    if(!bl) {
+        printf("%s: Could not find \"sandbox_trace\" bl insn\n",__FUNCTION__);
+        return -1;
+    }
+    uint8_t* address = (uint8_t *)bl + insn_bl_imm32_64(insn); // funcbegin
+    bl = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, (uint32_t *)address, insn_is_bl_64);
+    if(!bl) {
+        printf("%s: Could not find \"sandbox_trace\" bl insn\n",__FUNCTION__);
+        return -1;
+    }
+    bl = (addr_t)GET_OFFSET(kernel_len, bl);
+    printf("%s: Found \"sandbox_trace\" patch loc at %p\n",__FUNCTION__,(void*)(bl));
+    printf("%s: Patching \"sandbox_trace\" at %p\n", __FUNCTION__,(void*)(bl));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + bl) = 0xD503201F; // nop
     return 0;
 }
 
@@ -820,7 +815,7 @@ int main(int argc, char **argv) {
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
         printf("\t-a\t\tPatch map_IO (iOS 8& 9 Only)\n");
         printf("\t-t\t\tPatch tfp0 (iOS 8& 9 Only)\n");
-        printf("\t-p\t\tPatch sandbox_trace (iOS 8 Only)\n");
+        printf("\t-p\t\tPatch sandbox_trace (iOS 8& 9 Only)\n");
         printf("\t-g\t\tPatch sandbox (iOS 8 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
