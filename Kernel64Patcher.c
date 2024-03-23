@@ -652,6 +652,38 @@ int get_virtual_bool_AppleSEPManager_start_patch_ios9(void* kernel_buf,size_t ke
     return 0;
 }
 
+// iOS 7 arm64
+int get_sks_request_timeout_patch_ios7(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    char* str = "\"sks request timeout\"";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
+    if(!ent_loc) {
+        printf("%s: Could not find \"sks request timeout\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sks request timeout\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
+    if(!xref_stuff) {
+        printf("%s: Could not find \"sks request timeout\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sks request timeout\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
+    if(!beg_func) {
+        printf("%s: Could not find \"sks request timeout\" funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sks request timeout\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    beg_func = (addr_t)GET_OFFSET(kernel_len, beg_func); // offset that we use for patching the kernel
+    printf("%s: Patching \"sks request timeout\" at %p\n", __FUNCTION__,(void*)(beg_func));
+    *(uint32_t *) (kernel_buf + beg_func) = 0x52800000; // mov w0, 0x0
+    beg_func = beg_func + 0x4;
+    printf("%s: Patching \"sks request timeout\" at %p\n", __FUNCTION__,(void*)(beg_func));
+    *(uint32_t *) (kernel_buf + beg_func) = 0xD65F03C0; // ret
+    beg_func = beg_func + 0x4;
+    return 0;
+}
+
 // iOS 8 arm64
 int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
@@ -849,9 +881,9 @@ int main(int argc, char **argv) {
         printf("\t-p\t\tPatch sandbox_trace (iOS 8& 9 Only)\n");
         printf("\t-g\t\tPatch sandbox (iOS 8 Only)\n");
         printf("\t-v\t\tPatch virtual bool AppleSEPManager::start(IOService *) (iOS 9 Only)\n");
+        printf("\t-k\t\tPatch sks request timeout (iOS 7 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
-        
         return 0;
     }
     
@@ -947,6 +979,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-v") == 0) {
             printf("Kernel: Adding virtual bool AppleSEPManager::start(IOService *) patch...\n");
             get_virtual_bool_AppleSEPManager_start_patch_ios9(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-k") == 0) {
+            printf("Kernel: Adding sks request timeout patch...\n");
+            get_sks_request_timeout_patch_ios7(kernel_buf,kernel_len);
         }
     }
     
