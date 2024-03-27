@@ -863,8 +863,8 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
-// iOS 10 arm64
-int get_amfi_out_of_my_way_patch_ios10(void* kernel_buf,size_t kernel_len) {
+// iOS 11 arm64
+int get_amfi_out_of_my_way_patch_ios11(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     char amfiString[33] = "entitlements too small";
     int stringLen = 22;
@@ -920,7 +920,7 @@ int main(int argc, char **argv) {
         printf("\t-g\t\tPatch sandbox (iOS 8 Only)\n");
         printf("\t-v\t\tPatch virtual bool AppleSEPManager::start(IOService *) (iOS 9 Only)\n");
         printf("\t-k\t\tPatch sks request timeout (iOS 7 Only)\n");
-        printf("\t-u\t\tPatch amfi_get_out_of_my_way (iOS 10, 11, 12, 13& 14 Only)\n");
+        printf("\t-u\t\tPatch amfi_get_out_of_my_way (iOS 11, 12, 13& 14 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         return 0;
@@ -1025,7 +1025,7 @@ int main(int argc, char **argv) {
         }
         if(strcmp(argv[i], "-u") == 0) {
             printf("Kernel: Adding amfi_get_out_of_my_way patch...\n");
-            get_amfi_out_of_my_way_patch_ios10(kernel_buf,kernel_len);
+            get_amfi_out_of_my_way_patch_ios11(kernel_buf,kernel_len);
         }
     }
     
