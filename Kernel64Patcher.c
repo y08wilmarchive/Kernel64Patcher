@@ -863,6 +863,51 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 10 arm64
+int get_amfi_out_of_my_way_patch_ios10(void* kbuf,size_t klen) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    char amfiString[33] = "entitlements too small";
+    int stringLen = 22;
+    void* ent_loc = memmem(kbuf,klen,amfiString,stringLen);
+    if(!ent_loc) {
+        printf("%s: Could not find %s string\n",__FUNCTION__, amfiString);
+        return -1;
+    }
+    printf("%s: Found %s str loc at %p\n",__FUNCTION__,amfiString,GET_OFFSET(klen,ent_loc));
+    addr_t ent_ref = xref64(kbuf,0,klen,(addr_t)GET_OFFSET(klen, ent_loc));
+    if(!ent_ref) {
+        printf("%s: Could not find %s xref\n",__FUNCTION__,amfiString);
+        return -1;
+    }
+    printf("%s: Found %s str ref at %p\n",__FUNCTION__,amfiString,(void*)ent_ref);
+    addr_t next_bl = step64(kbuf, ent_ref, 100, INSN_CALL);
+    if(!next_bl) {
+        printf("%s: Could not find next bl\n",__FUNCTION__);
+        return -1;
+    }
+    next_bl = step64(kbuf, next_bl+0x4, 200, INSN_CALL);
+    if(!next_bl) {
+        printf("%s: Could not find next bl\n",__FUNCTION__);
+        return -1;
+    }
+    if(kernel_vers>3789) { 
+        next_bl = step64(kbuf, next_bl+0x4, 200, INSN_CALL);
+        if(!next_bl) {
+            printf("%s: Could not find next bl\n",__FUNCTION__);
+            return -1;
+        }
+    }
+    addr_t function = follow_call64(kbuf, next_bl);
+    if(!function) {
+        printf("%s: Could not find function bl\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Patching AMFI at %p\n",__FUNCTION__,(void*)function);
+    *(uint32_t *)(kbuf + function) = 0x320003E0;
+    *(uint32_t *)(kbuf + function + 0x4) = 0xD65F03C0;
+    return 0;
+}
+
 int main(int argc, char **argv) {
     
     printf("%s: Starting...\n", __FUNCTION__);
@@ -882,6 +927,7 @@ int main(int argc, char **argv) {
         printf("\t-g\t\tPatch sandbox (iOS 8 Only)\n");
         printf("\t-v\t\tPatch virtual bool AppleSEPManager::start(IOService *) (iOS 9 Only)\n");
         printf("\t-k\t\tPatch sks request timeout (iOS 7 Only)\n");
+        printf("\t-u\t\tPatch amfi_get_out_of_my_way (iOS 10, 11, 12, 13& 14 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         return 0;
@@ -983,6 +1029,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-k") == 0) {
             printf("Kernel: Adding sks request timeout patch...\n");
             get_sks_request_timeout_patch_ios7(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-u") == 0) {
+            printf("Kernel: Adding amfi_get_out_of_my_way patch...\n");
+            get_amfi_out_of_my_way_patch_ios10(kernel_buf,kernel_len);
         }
     }
     
