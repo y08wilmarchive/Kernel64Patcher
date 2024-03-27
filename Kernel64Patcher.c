@@ -892,7 +892,7 @@ int get_sigcheck_patch_ios10(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"sigcheck\" last bl insn at %p\n", __FUNCTION__,(void*)(bl));
-    addr_t bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, bl, insn_is_bl_64);
+    bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, bl, insn_is_bl_64);
     if(!bl) {
         printf("%s: Could not find \"sigcheck\" last bl insn\n",__FUNCTION__);
         return -1;
