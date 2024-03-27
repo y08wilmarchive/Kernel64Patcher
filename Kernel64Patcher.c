@@ -907,6 +907,18 @@ int get_sigcheck_patch_ios10(void* kernel_buf,size_t kernel_len) {
     printf("%s: Patching \"sigcheck\" at %p\n", __FUNCTION__,(void*)(bl));
     // 0xD503201F is nop
     *(uint32_t *) (kernel_buf + bl) = 0xd2800000; // mov x0, #0
+    bl = (addr_t)GET_OFFSET2(kernel_len, (uintptr_t)bl);
+    addr_t ret = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, bl, insn_is_ret);
+    if(!ret) {
+        printf("%s: Could not find \"sigcheck\" next ret insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sigcheck\" next ret insn at %p\n", __FUNCTION__,(void*)(ret));
+    ret = (addr_t)GET_OFFSET(kernel_len, ret);
+    printf("%s: Found \"sigcheck\" patch loc at %p\n",__FUNCTION__,(void*)(ret));
+    printf("%s: Patching \"sigcheck\" at %p\n", __FUNCTION__,(void*)(ret));
+    ret = ret - 0x4;
+    *(uint32_t *) (kernel_buf + ret) = 0xd2800000; // mov x0, #0
     return 0;
 }
 
