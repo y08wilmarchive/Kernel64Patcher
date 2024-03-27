@@ -863,6 +863,54 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 10
+int get_sigcheck_patch_ios10(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search 1F 05 00 71 21 07 00 54 68 0A 40 F9 1F 11 00 F1 A0 02 00 54
+    // cmp w8, #0x1
+    // b.ne 0x103d4
+    // ldr x8, [x19, #0x10]
+    // cmp x8, #0x4
+    // b.eq 0x10350
+    uint8_t search[] = { 0x1F, 0x05, 0x00, 0x71, 0x21, 0x07, 0x00, 0x54, 0x68, 0x0A, 0x40, 0xF9, 0x1F, 0x11, 0x00, 0xF1, 0xA0, 0x02, 0x00, 0x54 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"sigcheck\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sigcheck\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    printf("%s: Found \"sigcheck\" xref at %p\n", __FUNCTION__,(void*)(ent_loc));
+    addr_t beg_func = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_funcbegin_64);
+    if(!beg_func) {
+        printf("%s: Could not find \"sigcheck\" next funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sigcheck\" next funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    addr_t bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, beg_func, insn_is_bl_64);
+    if(!bl) {
+        printf("%s: Could not find \"sigcheck\" last bl insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sigcheck\" last bl insn at %p\n", __FUNCTION__,(void*)(bl));
+    addr_t bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, bl, insn_is_bl_64);
+    if(!bl) {
+        printf("%s: Could not find \"sigcheck\" last bl insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sigcheck\" last bl insn at %p\n", __FUNCTION__,(void*)(bl));
+    bl = (addr_t)GET_OFFSET(kernel_len, bl);
+    printf("%s: Found \"sigcheck\" patch loc at %p\n",__FUNCTION__,(void*)(bl));
+    printf("%s: Patching \"sigcheck\" at %p\n", __FUNCTION__,(void*)(bl));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + bl) = 0xD65F03C0; // ret
+    bl = bl - 0x4;
+    printf("%s: Patching \"sigcheck\" at %p\n", __FUNCTION__,(void*)(bl));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + bl) = 0xd2800000; // mov x0, #0
+    return 0;
+}
+
+
 int main(int argc, char **argv) {
     
     printf("%s: Starting...\n", __FUNCTION__);
@@ -882,6 +930,7 @@ int main(int argc, char **argv) {
         printf("\t-g\t\tPatch sandbox (iOS 8 Only)\n");
         printf("\t-v\t\tPatch virtual bool AppleSEPManager::start(IOService *) (iOS 9 Only)\n");
         printf("\t-k\t\tPatch sks request timeout (iOS 7 Only)\n");
+        printf("\t-c\t\tPatch sigcheck (iOS 10 Only; iBoot64Patcher)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         return 0;
@@ -983,6 +1032,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-k") == 0) {
             printf("Kernel: Adding sks request timeout patch...\n");
             get_sks_request_timeout_patch_ios7(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-c") == 0) {
+            printf("Kernel: Adding sigcheck patch...\n");
+            get_sigcheck_patch_ios10(kernel_buf,kernel_len);
         }
     }
     
