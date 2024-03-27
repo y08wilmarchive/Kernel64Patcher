@@ -864,47 +864,40 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
 }
 
 // iOS 10 arm64
-int get_amfi_out_of_my_way_patch_ios10(void* kbuf,size_t klen) {
+int get_amfi_out_of_my_way_patch_ios10(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     char amfiString[33] = "entitlements too small";
     int stringLen = 22;
-    void* ent_loc = memmem(kbuf,klen,amfiString,stringLen);
+    void* ent_loc = memmem(kernel_buf,kernel_len,amfiString,stringLen);
     if(!ent_loc) {
         printf("%s: Could not find %s string\n",__FUNCTION__, amfiString);
         return -1;
     }
-    printf("%s: Found %s str loc at %p\n",__FUNCTION__,amfiString,GET_OFFSET(klen,ent_loc));
-    addr_t ent_ref = xref64(kbuf,0,klen,(addr_t)GET_OFFSET(klen, ent_loc));
+    printf("%s: Found %s str loc at %p\n",__FUNCTION__,amfiString,GET_OFFSET(kernel_len,ent_loc));
+    addr_t ent_ref = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
     if(!ent_ref) {
         printf("%s: Could not find %s xref\n",__FUNCTION__,amfiString);
         return -1;
     }
     printf("%s: Found %s str ref at %p\n",__FUNCTION__,amfiString,(void*)ent_ref);
-    addr_t next_bl = step64(kbuf, ent_ref, 100, INSN_CALL);
+    addr_t next_bl = step64(kernel_buf, ent_ref, 100, INSN_CALL);
     if(!next_bl) {
         printf("%s: Could not find next bl\n",__FUNCTION__);
         return -1;
     }
-    next_bl = step64(kbuf, next_bl+0x4, 200, INSN_CALL);
+    next_bl = step64(kernel_buf, next_bl+0x4, 200, INSN_CALL);
     if(!next_bl) {
         printf("%s: Could not find next bl\n",__FUNCTION__);
         return -1;
     }
-    if(kernel_vers>3789) { 
-        next_bl = step64(kbuf, next_bl+0x4, 200, INSN_CALL);
-        if(!next_bl) {
-            printf("%s: Could not find next bl\n",__FUNCTION__);
-            return -1;
-        }
-    }
-    addr_t function = follow_call64(kbuf, next_bl);
+    addr_t function = follow_call64(kernel_buf, next_bl);
     if(!function) {
         printf("%s: Could not find function bl\n",__FUNCTION__);
         return -1;
     }
     printf("%s: Patching AMFI at %p\n",__FUNCTION__,(void*)function);
-    *(uint32_t *)(kbuf + function) = 0x320003E0;
-    *(uint32_t *)(kbuf + function + 0x4) = 0xD65F03C0;
+    *(uint32_t *)(kernel_buf + function) = 0x320003E0;
+    *(uint32_t *)(kernel_buf + function + 0x4) = 0xD65F03C0;
     return 0;
 }
 
