@@ -438,6 +438,30 @@ int get_vm_fault_enter_patch_ios9(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 10 arm64
+int get_vm_fault_enter_patch_ios10(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search 40 19 40 7A 8A 7A 1D 12
+    // ccmp w10, #0, #0, ne
+    // and w10, w20, #0xfffffffb
+    uint8_t search[] = { 0x40, 0x19, 0x40, 0x7A, 0x8A, 0x7A, 0x1D, 0x12 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    xref_stuff = xref_stuff + 0x4; // move to and w10, w20, #0xfffffffb
+    xref_stuff = xref_stuff + 0x4; // move to stp w10, w12, [x29, #-0xc0]
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002c; // mov w12, 0x1
+    return 0;
+}
+
 // iOS 7 arm64
 int get_vm_fault_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
@@ -980,6 +1004,7 @@ int main(int argc, char **argv) {
             get_vm_fault_enter_patch_ios7(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios8(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios9(kernel_buf,kernel_len);
+            get_vm_fault_enter_patch_ios10(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-m") == 0) {
             printf("Kernel: Adding mount_common patch...\n");
