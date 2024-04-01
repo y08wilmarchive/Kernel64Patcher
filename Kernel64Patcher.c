@@ -160,6 +160,58 @@ int get_vm_map_protect_patch_ios9(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 11 arm64
+int get_vm_map_enter_patch_ios11(void* kernel_buf,size_t kernel_len) {
+    // search 09 79 1d 12 09 11 89 1a 1f 01 1f 72 11 01 89 1a
+    // and w9, w8, #0xfffffffb
+    // csel w9, w8, w9, ne
+    // tst w8, #0x2
+    // csel w17, w8, w9, eq
+    uint8_t search[] = { 0x09, 0x79, 0x1d, 0x12, 0x09, 0x11, 0x89, 0x1a, 0x1f, 0x01, 0x1f, 0x72, 0x11, 0x01, 0x89, 0x1a };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_map_enter\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_map_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_map_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
+    // https://cryptii.com/pipes/integer-encoder
+    // if you convert 1f2003D5 to a 32 bit unsigned integer in little endian https://archive.is/22JSe
+    // you will get d503201f as a result, which can be used after the = sign to make this a nop
+    // however this vm_map_enter patch needs to be mov w9, w8 not a nop
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x2a0803e9; // mov w9, w8
+    return 0;
+}
+
+// iOS 11 arm64
+int get_vm_map_protect_patch_ios11(void* kernel_buf,size_t kernel_len) {
+    // search 09 79 1d 12 09 11 89 1a 1f 01 1f 72 1c 01 89 1a
+    // and w9, w8, #0xfffffffb
+    // csel w9, w8, w9, ne
+    // tst w8, #0x2
+    // csel w28, w8, w9, eq
+    uint8_t search[] = { 0x09, 0x79, 0x1d, 0x12, 0x09, 0x11, 0x89, 0x1a, 0x1f, 0x01, 0x1f, 0x72, 0x1c, 0x01, 0x89, 0x1a };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_map_protect\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_map_protect\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_map_protect\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_protect\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
+    // https://cryptii.com/pipes/integer-encoder
+    // if you convert 1f2003D5 to a 32 bit unsigned integer in little endian https://archive.is/22JSe
+    // you will get d503201f as a result, which can be used after the = sign to make this a nop
+    // however this vm_map_protect patch needs to be mov w9, w8 not a nop
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x2a0803e9; // mov w9, w8
+    return 0;
+}
+
 // iOS 10 arm64
 int get_vm_map_enter_patch_ios10(void* kernel_buf,size_t kernel_len) {
     // search 09 79 1d 12 09 11 89 1a 1f 01 1f 72 09 01 89 1a
@@ -534,13 +586,13 @@ int get_vm_fault_enter_patch_ios10(void* kernel_buf,size_t kernel_len) {
     // ccmp w10, #0, #0, ne
     // and w10, w20, #0xfffffffb
     // 
-    // tst w8, #0x100000 -> nop -> 1f2003d5
-    // ccmp w10, #0, #0x4, eq -> nop -> 1f2003d5
-    // and w10, w26, #0x4 -> nop -> 1f2003d5
-    // ccmp w10, #0, #0, ne -> nop -> 1f2003d5
-    // and w10, w20, #0xfffffffb -> nop -> 1f2003d5
-    // stp w10, w12, [x29, #-0xc0] -> mov w10, 0x1 -> 2c008052
-    // csel w10, w10, w20, eq -> mov w12, 0x1 -> 2a008052
+    // tst w8, #0x100000
+    // ccmp w10, #0, #0x4, eq
+    // and w10, w26, #0x4
+    // ccmp w10, #0, #0, ne
+    // and w10, w20, #0xfffffffb
+    // stp w10, w12, [x29, #-0xc0]
+    // csel w10, w10, w20, eq
     // 
     // should work on ios 10.2-10.3.3
     uint8_t search[] = { 0x40, 0x19, 0x40, 0x7A, 0x8A, 0x7A, 0x1D, 0x12 };
@@ -553,22 +605,54 @@ int get_vm_fault_enter_patch_ios10(void* kernel_buf,size_t kernel_len) {
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
     printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
     printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,(void*)(xref_stuff));
+    xref_stuff = xref_stuff + 0x4; // move to and w10, w20, #0xfffffffb
     printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    //*(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
-    //xref_stuff = xref_stuff - 0x4; // move to and w10, w26, #0x4
-    //*(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
-    //xref_stuff = xref_stuff - 0x4; // move to ccmp w10, #0, #0x4, eq
-    //*(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
-    //xref_stuff = xref_stuff - 0x4; // move to tst w8, #0x100000
-    //*(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
-    //xref_stuff = xref_stuff + 0x4; // move to ccmp w10, #0, #0x4, eq
-    //xref_stuff = xref_stuff + 0x4; // move to and w10, w26, #0x4
-    //xref_stuff = xref_stuff + 0x4; // move to ccmp w10, #0, #0, ne
-    //xref_stuff = xref_stuff + 0x4; // move to and w10, w20, #0xfffffffb
-    //*(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
-    xref_stuff = xref_stuff + 0x4; // move to stp w10, w12, [x29, #-0xc0]
     *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002c; // mov w12, 0x1
-    xref_stuff = xref_stuff + 0x4; // move to csel w10, w10, w20, eq
+    xref_stuff = xref_stuff + 0x4; // move to stp w10, w12, [x29, #-0xc0]
+    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002a; // mov w10, 0x1
+    return 0;
+}
+
+// iOS 11 arm64
+int get_vm_fault_enter_patch_ios11(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search
+    // eb179f1a8d7b1d12
+    // cset w11, eq
+    // and w13, w28, #0xfffffffb
+    // 
+    // cset w11, eq
+    // and w13, w28, #0xfffffffb -> mov w12, 0x1
+    // tst w11, w10
+    // str w13, [sp, #0x100] -> mov w10, 0x1
+    // csel w10, w13, w28, ne
+    // str w10, [sp, #0x11c]
+    // stp x25, x20, [sp, #0x108]
+    // str w12, [sp, #0x104]
+    // cbz w12, 0xfffffff0071867c0
+    // mov w28, #0
+    // mov w27, #0
+    // b 0xfffffff007186e74
+    // tbnz w8, #0x13, 0xfffffff0071867e8
+    // 
+    // should work on ios 11.4.1
+    uint8_t search[] = { 0xeb, 0x17, 0x9f, 0x1a, 0x8d, 0x7b, 0x1d, 0x12 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,(void*)(xref_stuff));
+    xref_stuff = xref_stuff + 0x4; // move to and w13, w28, #0xfffffffb
+    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002c; // mov w12, 0x1
+    xref_stuff = xref_stuff + 0x4; // move to tst w11, w10
+    xref_stuff = xref_stuff + 0x4; // move to str w13, [sp, #0x100]
+    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
     *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002a; // mov w10, 0x1
     return 0;
 }
@@ -1044,12 +1128,12 @@ int main(int argc, char **argv) {
     
     if(argc < 4){
         printf("Usage: %s <kernel_in> <kernel_out> <args>\n",argv[0]);
-        printf("\t-m\t\tPatch mount_common (iOS 7, 8, 9& 10 Only)\n");
-        printf("\t-e\t\tPatch vm_map_enter (iOS 7, 8, 9& 10 Only)\n");
-        printf("\t-l\t\tPatch vm_map_protect (iOS 7, 8, 9& 10 Only)\n");
-        printf("\t-f\t\tPatch vm_fault_enter (iOS 7, 8, 9& 10 Only)\n");
+        printf("\t-m\t\tPatch mount_common (iOS 7, 8, 9, 10& 11 Only)\n");
+        printf("\t-e\t\tPatch vm_map_enter (iOS 7, 8, 9, 10& 11 Only)\n");
+        printf("\t-l\t\tPatch vm_map_protect (iOS 7, 8, 9, 10& 11 Only)\n");
+        printf("\t-f\t\tPatch vm_fault_enter (iOS 7, 8, 9, 10& 11 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
-        printf("\t-a\t\tPatch map_IO (iOS 8, 9& 10 Only)\n");
+        printf("\t-a\t\tPatch map_IO (iOS 8, 9, 10& 11 Only)\n");
         printf("\t-t\t\tPatch tfp0 (iOS 8, 9& 10 Only)\n");
         printf("\t-p\t\tPatch sandbox_trace (iOS 8& 9 Only)\n");
         printf("\t-g\t\tPatch sandbox (iOS 8 Only)\n");
@@ -1105,12 +1189,14 @@ int main(int argc, char **argv) {
             get_vm_map_enter_patch_ios8(kernel_buf,kernel_len);
             get_vm_map_enter_patch_ios9(kernel_buf,kernel_len);
             get_vm_map_enter_patch_ios10(kernel_buf,kernel_len);
+            get_vm_map_enter_patch_ios11(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-l") == 0) {
             printf("Kernel: Adding vm_map_protect patch...\n");
             get_vm_map_protect_patch_ios8(kernel_buf,kernel_len);
             get_vm_map_protect_patch_ios9(kernel_buf,kernel_len);
             get_vm_map_protect_patch_ios10(kernel_buf,kernel_len);
+            get_vm_map_protect_patch_ios11(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-f") == 0) {
             printf("Kernel: Adding vm_fault_enter patch...\n");
@@ -1119,6 +1205,7 @@ int main(int argc, char **argv) {
             get_vm_fault_enter_patch_ios84(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios9(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios10(kernel_buf,kernel_len);
+            get_vm_fault_enter_patch_ios11(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-m") == 0) {
             printf("Kernel: Adding mount_common patch...\n");
