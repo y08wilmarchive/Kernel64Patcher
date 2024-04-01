@@ -1107,11 +1107,13 @@ int main(int argc, char **argv) {
             get_vm_map_enter_patch_ios7(kernel_buf,kernel_len);
             get_vm_map_enter_patch_ios8(kernel_buf,kernel_len);
             get_vm_map_enter_patch_ios9(kernel_buf,kernel_len);
+            get_vm_map_enter_patch_ios10(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-l") == 0) {
             printf("Kernel: Adding vm_map_protect patch...\n");
             get_vm_map_protect_patch_ios8(kernel_buf,kernel_len);
             get_vm_map_protect_patch_ios9(kernel_buf,kernel_len);
+            get_vm_map_protect_patch_ios10(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-f") == 0) {
             printf("Kernel: Adding vm_fault_enter patch...\n");
