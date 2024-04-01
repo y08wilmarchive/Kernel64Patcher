@@ -378,19 +378,12 @@ int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
 // iOS 8 arm64
 int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
-    // search 1F 12 6A 00 00 34 5A 06 80 52
-    // 8a 03 1f 12 6a 00 00 34 5a 06 80 52 0a 02 00 14 68 01 a8 37 cd 06 00 35
-    // and w10, w28, #0x2
-    // cbz w10, 0xffffff8002079a60
-    // mov w26, #0x32
-    // b 0xffffff800207a284
+    // search CD 06 00 35
     // tbnz w8, #0x15, 0xffffff8002079a8c
     // cbnz w13, 0xffffff8002079b3c
-    // take note that we are searching by 1f 12 and not 8a 03 1f 12 at the start
-    // this means to get to the next line we need to add 0x2 not 0x4
     // we need to make tbnz w8, #0x15, 0xffffff8002079a8c a mov w13, #0x1
     // because cbnz w13, 0xffffff8002079b3c is checking register w13
-    uint8_t search[] = { 0x1F, 0x12, 0x6A, 0x00, 0x00, 0x34, 0x5A, 0x06, 0x80, 0x52 };
+    uint8_t search[] = { 0xCD, 0x06, 0x00, 0x35 };
     void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
     if (!ent_loc) {
         printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
@@ -400,11 +393,31 @@ int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
     printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
     printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    xref_stuff = xref_stuff + 0x2; // move to cbz w10, 0xffffff8002079a60
-    xref_stuff = xref_stuff + 0x4; // move to mov w26, #0x32
-    xref_stuff = xref_stuff + 0x4; // move to b 0xffffff800207a284
-    xref_stuff = xref_stuff + 0x4; // move to tbnz w8, #0x15, 0xffffff8002079a8c
+    xref_stuff = xref_stuff - 0x4; // move to tbnz w8, #0x15, 0xffffff8002079a8c
     *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002d; // mov w13, #0x1
+    return 0;
+}
+
+// iOS 8.4 arm64
+int get_vm_fault_enter_patch_ios84(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search 4E 06 00 35 
+    // tbnz w8, #0x15, 0xffffff800207e7bc
+    // cbnz w14, 0xffffff800207e860
+    // we need to make tbnz w8, #0x15, 0xffffff800207e7bc a mov w14, #0x1
+    // because cbnz w14, 0xffffff800207e860 is checking register w14
+    uint8_t search[] = { 0x4E, 0x06, 0x00, 0x35 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    xref_stuff = xref_stuff - 0x4; // move to tbnz w8, #0x15, 0xffffff800207e7bc
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002e; // mov w14, #0x1
     return 0;
 }
 
@@ -1003,6 +1016,7 @@ int main(int argc, char **argv) {
             printf("Kernel: Adding vm_fault_enter patch...\n");
             get_vm_fault_enter_patch_ios7(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios8(kernel_buf,kernel_len);
+            get_vm_fault_enter_patch_ios84(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios9(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios10(kernel_buf,kernel_len);
         }
