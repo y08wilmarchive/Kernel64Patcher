@@ -566,6 +566,7 @@ int get_vm_fault_enter_patch_ios10(void* kernel_buf,size_t kernel_len) {
     //xref_stuff = xref_stuff + 0x4; // move to ccmp w10, #0, #0, ne
     //xref_stuff = xref_stuff + 0x4; // move to and w10, w20, #0xfffffffb
     //*(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
+    xref_stuff = xref_stuff + 0x4; // move to and w10, w20, #0xfffffffb
     xref_stuff = xref_stuff + 0x4; // move to stp w10, w12, [x29, #-0xc0]
     *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002c; // mov w12, 0x1
     xref_stuff = xref_stuff + 0x4; // move to csel w10, w10, w20, eq
