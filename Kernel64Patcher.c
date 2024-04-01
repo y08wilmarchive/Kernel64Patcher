@@ -160,6 +160,61 @@ int get_vm_map_protect_patch_ios9(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 10 arm64
+int get_vm_map_enter_patch_ios10(void* kernel_buf,size_t kernel_len) {
+    // search 09 79 1d 12 09 11 89 1a 1f 01 1f 72 09 01 89 1a
+    // and w9, w8, #0xfffffffb -> mov w9, w8
+    // csel w9, w8, w9, ne
+    // tst w8, #0x2
+    // csel w9, w8, w9, eq
+    uint8_t search[] = { 0x09 0x79 0x1d 0x12 0x09 0x11 0x89 0x1a 0x1f 0x01 0x1f 0x72 0x09 0x01 0x89 0x1a };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_map_enter\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_map_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_map_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
+    // https://cryptii.com/pipes/integer-encoder
+    // if you convert 1f2003D5 to a 32 bit unsigned integer in little endian https://archive.is/22JSe
+    // you will get d503201f as a result, which can be used after the = sign to make this a nop
+    // however this vm_map_enter patch needs to be mov w9, w8 not a nop
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x2a0803e9; // mov w9, w8
+    return 0;
+}
+
+// iOS 10 arm64
+int get_vm_map_protect_patch_ios10(void* kernel_buf,size_t kernel_len) {
+    // search 09 79 1d 12 09 11 89 1a 1f 01 1f 72 10 01 89 1a
+    // and w9, w8, #0xfffffffb -> mov w9, w8
+    // csel w9, w8, w9, ne
+    // tst w8, #0x2
+    // csel w16, w8, w9, eq
+    uint8_t search[] = { 0x09, 0x79, 0x1d, 0x12, 0x09, 0x11, 0x89, 0x1a, 0x1f, 0x01, 0x1f, 0x72, 0x10, 0x01, 0x89, 0x1a };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_map_protect\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_map_protect\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"vm_map_protect\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"vm_map_protect\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    // 0xD503201F is nop also known as 1f2003D5 or 0x1F 0x20 0x03 0xD5
+    // https://cryptii.com/pipes/integer-encoder
+    // if you convert 1f2003D5 to a 32 bit unsigned integer in little endian https://archive.is/22JSe
+    // you will get d503201f as a result, which can be used after the = sign to make this a nop
+    // however this vm_map_protect patch needs to be mov w9, w8 not a nop
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x2a0803e9; // mov w9, w8
+    return 0;
+}
+
+vm_map_enter ios 10 09791d120911891a1f011f720901891a
+vm_map_protect ios 10 09791d120911891a1f011f721001891a
+
 // iOS 7 arm64
 int get_mount_common_patch_ios7(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
@@ -222,6 +277,29 @@ int get_mount_common_patch_ios9(void* kernel_buf,size_t kernel_len) {
     // ldrb w8, [x8, #0x79]
     // add 0x4 to address
     uint8_t search[] = { 0xE8, 0x6E, 0x40, 0xF9, 0x08, 0xE5, 0x41, 0x39 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"mount_common\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"mount_common\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"mount_common\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"mount_common\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    xref_stuff = xref_stuff + 0x4;
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x528000c8; // mov w8, 0x6
+    return 0;
+}
+
+// iOS 10 arm64
+int get_mount_common_patch_ios10(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search e8 6e 40 f9 08 c5 41 39
+    // ldr x8, [x23, #0xd8]
+    // ldrb w8, [x8, #0x71]
+    // add 0x4 to address
+    uint8_t search[] = { 0xe8, 0x6e, 0x40, 0xf9, 0x08, 0xc5, 0x41, 0x39 };
     void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
     if (!ent_loc) {
         printf("%s: Could not find \"mount_common\" patch\n",__FUNCTION__);
@@ -969,13 +1047,13 @@ int main(int argc, char **argv) {
     
     if(argc < 4){
         printf("Usage: %s <kernel_in> <kernel_out> <args>\n",argv[0]);
-        printf("\t-m\t\tPatch mount_common (iOS 7, 8& 9 Only)\n");
-        printf("\t-e\t\tPatch vm_map_enter (iOS 7, 8& 9 Only)\n");
-        printf("\t-l\t\tPatch vm_map_protect (iOS 7, 8& 9 Only)\n");
-        printf("\t-f\t\tPatch vm_fault_enter (iOS 7, 8& 9 Only)\n");
+        printf("\t-m\t\tPatch mount_common (iOS 7, 8, 9& 10 Only)\n");
+        printf("\t-e\t\tPatch vm_map_enter (iOS 7, 8, 9& 10 Only)\n");
+        printf("\t-l\t\tPatch vm_map_protect (iOS 7, 8, 9& 10 Only)\n");
+        printf("\t-f\t\tPatch vm_fault_enter (iOS 7, 8, 9& 10 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
-        printf("\t-a\t\tPatch map_IO (iOS 8& 9 Only)\n");
-        printf("\t-t\t\tPatch tfp0 (iOS 8& 9 Only)\n");
+        printf("\t-a\t\tPatch map_IO (iOS 8, 9& 10 Only)\n");
+        printf("\t-t\t\tPatch tfp0 (iOS 8, 9& 10 Only)\n");
         printf("\t-p\t\tPatch sandbox_trace (iOS 8& 9 Only)\n");
         printf("\t-g\t\tPatch sandbox (iOS 8 Only)\n");
         printf("\t-v\t\tPatch virtual bool AppleSEPManager::start(IOService *) (iOS 9 Only)\n");
@@ -1048,6 +1126,7 @@ int main(int argc, char **argv) {
             get_mount_common_patch_ios7(kernel_buf,kernel_len);
             get_mount_common_patch_ios8(kernel_buf,kernel_len);
             get_mount_common_patch_ios9(kernel_buf,kernel_len);
+            get_mount_common_patch_ios10(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-s") == 0) {
             printf("Kernel: Adding PE_i_can_has_debugger patch...\n");
