@@ -212,9 +212,6 @@ int get_vm_map_protect_patch_ios10(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
-vm_map_enter ios 10 09791d120911891a1f011f720901891a
-vm_map_protect ios 10 09791d120911891a1f011f721001891a
-
 // iOS 7 arm64
 int get_mount_common_patch_ios7(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
