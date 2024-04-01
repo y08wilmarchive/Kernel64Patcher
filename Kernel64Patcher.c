@@ -454,9 +454,20 @@ int get_vm_fault_enter_patch_ios9(void* kernel_buf,size_t kernel_len) {
 // iOS 10 arm64
 int get_vm_fault_enter_patch_ios10(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
-    // search 40 19 40 7A 8A 7A 1D 12
+    // search
+    // 4019407a8a7a1d12
     // ccmp w10, #0, #0, ne
     // and w10, w20, #0xfffffffb
+    // 
+    // tst w8, #0x100000 -> nop -> 1f2003d5
+    // ccmp w10, #0, #0x4, eq -> nop -> 1f2003d5
+    // and w10, w26, #0x4 -> nop -> 1f2003d5
+    // ccmp w10, #0, #0, ne -> nop -> 1f2003d5
+    // and w10, w20, #0xfffffffb -> nop -> 1f2003d5
+    // stp w10, w12, [x29, #-0xc0] -> mov w10, 0x1 -> 2c008052
+    // csel w10, w10, w20, eq -> mov w12, 0x1 -> 2a008052
+    // 
+    // should work on ios 10.2-10.3.3
     uint8_t search[] = { 0x40, 0x19, 0x40, 0x7A, 0x8A, 0x7A, 0x1D, 0x12 };
     void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
     if (!ent_loc) {
@@ -466,12 +477,24 @@ int get_vm_fault_enter_patch_ios10(void* kernel_buf,size_t kernel_len) {
     printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
     printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    xref_stuff = xref_stuff + 0x4; // move to and w10, w20, #0xfffffffb
-    xref_stuff = xref_stuff + 0x4; // move to stp w10, w12, [x29, #-0xc0]
     printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,(void*)(xref_stuff));
     printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
+    xref_stuff = xref_stuff - 0x4; // move to and w10, w26, #0x4
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
+    xref_stuff = xref_stuff - 0x4; // move to ccmp w10, #0, #0x4, eq
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
+    xref_stuff = xref_stuff - 0x4; // move to tst w8, #0x100000
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
+    xref_stuff = xref_stuff + 0x4; // move to ccmp w10, #0, #0x4, eq
+    xref_stuff = xref_stuff + 0x4; // move to and w10, w26, #0x4
+    xref_stuff = xref_stuff + 0x4; // move to ccmp w10, #0, #0, ne
+    xref_stuff = xref_stuff + 0x4; // move to and w10, w20, #0xfffffffb
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD503201F; // nop
+    xref_stuff = xref_stuff + 0x4; // move to stp w10, w12, [x29, #-0xc0]
     *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002c; // mov w12, 0x1
+    xref_stuff = xref_stuff + 0x4; // move to csel w10, w10, w20, eq
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002a; // mov w10, 0x1
     return 0;
 }
 
