@@ -618,10 +618,15 @@ int get_vm_fault_enter_patch_ios10(void* kernel_buf,size_t kernel_len) {
 int get_vm_fault_enter_patch_ios11(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // search
-    // eb179f1a8d7b1d12
-    // cset w11, eq
-    // and w13, w28, #0xfffffffb
+    // ac1740b91f010e72
+    // ldr w12, [x29, #0x14]
+    // tst w8, #0x40000
     // 
+    // ldr w12, [x29, #0x14]
+    // tst w8, #0x40000
+    // cset w10, eq
+    // and w10, w10, w28, lsr #0x2
+    // tst w24, #0x4
     // cset w11, eq
     // and w13, w28, #0xfffffffb -> mov w12, 0x1
     // tst w11, w10
@@ -636,8 +641,8 @@ int get_vm_fault_enter_patch_ios11(void* kernel_buf,size_t kernel_len) {
     // b 0xfffffff007186e74
     // tbnz w8, #0x13, 0xfffffff0071867e8
     // 
-    // should work on ios 11.4.1
-    uint8_t search[] = { 0xeb, 0x17, 0x9f, 0x1a, 0x8d, 0x7b, 0x1d, 0x12 };
+    // should work on ios 11.1-11.4.1
+    uint8_t search[] = { 0xac, 0x17, 0x40, 0xb9, 0x1f, 0x01, 0x0e, 0x72 };
     void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
     if (!ent_loc) {
         printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
@@ -647,6 +652,11 @@ int get_vm_fault_enter_patch_ios11(void* kernel_buf,size_t kernel_len) {
     addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
     printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
     printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,(void*)(xref_stuff));
+    xref_stuff = xref_stuff + 0x4; // move to tst w8, #0x40000
+    xref_stuff = xref_stuff + 0x4; // move to cset w10, eq
+    xref_stuff = xref_stuff + 0x4; // move to and w10, w10, w28, lsr #0x2
+    xref_stuff = xref_stuff + 0x4; // move to tst w24, #0x4
+    xref_stuff = xref_stuff + 0x4; // move to cset w11, eq
     xref_stuff = xref_stuff + 0x4; // move to and w13, w28, #0xfffffffb
     printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
     *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002c; // mov w12, 0x1
