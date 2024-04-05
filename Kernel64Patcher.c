@@ -1092,6 +1092,124 @@ int get_sandbox_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 9 arm64
+int get_sandbox_patch_ios9(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // Extracted from Taig 8.4 jailbreak (thanks @in7egral)
+    // this is a modified taig sandbox payload that replaces the first instruction in the sandbox evaluate function in the kernel with a branch instruction that jumps to a function we create. this function we create should look and see if the path variable is present or not, and if it is, force it to bypass sandbox by returning 0x1800000000. if the path variable is not present, it has another branch instruction but this time it branches back to the original sandbox evaluate function from apple but at funcbegin+1 aka the second line of the function, thereby skipping the branch instruction from earlier that allowed us to run our function.
+    uint8_t payload[0x190] = {
+        0xFD, 0x7B, 0xBF, 0xA9, 0xFD, 0x03, 0x00, 0x91, 0xF4, 0x4F, 0xBF, 0xA9, 0xF6, 0x57, 0xBF, 0xA9, 0xFF, 0x43, 0x10, 0xD1, 0xF3, 0x03, 0x00, 0xAA, 0xF4, 0x03, 0x01, 0xAA, 0xF5, 0x03, 0x02, 0xAA, 0xF6, 0x03, 0x03, 0xAA, 0xC0, 0x26, 0x40, 0xF9, 0x1F, 0x04, 0x00, 0xF1, 0x41, 0x04, 0x00, 0x54, 0x00, 0x03, 0x80, 0xd2, 0x00, 0x7c, 0x60, 0xd3, 0xff, 0x43, 0x10, 0x91, 0xf6, 0x57, 0xc1, 0xa8, 0xf4, 0x4f, 0xc1, 0xa8, 0xfd, 0x7b, 0xc1, 0xa8, 0xc0, 0x03, 0x5f, 0xd6, 0xf4, 0x4f, 0xc1, 0xa8, 0xfd, 0x7b, 0xc1, 0xa8, 0xc0, 0x03, 0x5f, 0xd6, 0xE0, 0x03, 0x00, 0x91, 0x81, 0x05, 0x00, 0x10, 0x1E, 0x00, 0x00, 0x94, 0x80, 0x02, 0x00, 0xB4, 0xE0, 0x03, 0x00, 0x91, 0x81, 0x05, 0x00, 0x30, 0x1A, 0x00, 0x00, 0x94, 0x20, 0x01, 0x00, 0xB5, 0xE0, 0x03, 0x00, 0x91, 0xA1, 0x05, 0x00, 0x30, 0x16, 0x00, 0x00, 0x94, 0x80, 0x01, 0x00, 0xB4, 0xE0, 0x03, 0x00, 0x91, 0xA1, 0x06, 0x00, 0x70, 0x12, 0x00, 0x00, 0x94, 0x00, 0x01, 0x00, 0xB5, 0x00, 0x03, 0x80, 0xD2, 0x00, 0x7C, 0x60, 0xD3, 0xFF, 0x43, 0x10, 0x91, 0xF6, 0x57, 0xC1, 0xA8, 0xF4, 0x4F, 0xC1, 0xA8, 0xFD, 0x7B, 0xC1, 0xA8, 0xC0, 0x03, 0x5F, 0xD6, 0xE0, 0x03, 0x13, 0xAA, 0xE1, 0x03, 0x14, 0xAA, 0xE2, 0x03, 0x15, 0xAA, 0xFF, 0x43, 0x10, 0x91, 0xF6, 0x57, 0xC1, 0xA8, 0xF4, 0x4F, 0xC1, 0xA8, 0xFD, 0x7B, 0xC1, 0xA8, 0xCC, 0xCC, 0xCC, 0xCC, 0xDD, 0xDD, 0xDD, 0xDD, 0x04, 0x00, 0x40, 0x39, 0x25, 0x00, 0x40, 0x39, 0x25, 0x01, 0x00, 0x34, 0x9F, 0x00, 0x05, 0x6B, 0xA1, 0x00, 0x00, 0x54, 0xC4, 0x00, 0x00, 0x34, 0x00, 0x04, 0x00, 0x91, 0x21, 0x04, 0x00, 0x91, 0xF8, 0xFF, 0xFF, 0x17, 0x20, 0x00, 0x80, 0x52, 0xC0, 0x03, 0x5F, 0xD6, 0x00, 0x00, 0x80, 0x52, 0xC0, 0x03, 0x5F, 0xD6, 0x2F, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x2F, 0x76, 0x61, 0x72, 0x2F, 0x74, 0x76, 0x70, 0x00, 0x2F, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x2F, 0x76, 0x61, 0x72, 0x2F, 0x76, 0x6F, 0x62, 0x69, 0x6C, 0x65, 0x00, 0x2F, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x2F, 0x76, 0x61, 0x72, 0x2F, 0x6D, 0x6F, 0x62, 0x69, 0x6C, 0x65, 0x2F, 0x4C, 0x69, 0x62, 0x72, 0x61, 0x72, 0x79, 0x2F, 0x50, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6E, 0x63, 0x65, 0x73, 0x2F, 0x63, 0x6F, 0x6D, 0x2E, 0x61, 0x70, 0x70, 0x6C, 0x65, 0x00, 0x2F, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x2F, 0x76, 0x61, 0x72, 0x2F, 0x6D, 0x6F, 0x62, 0x69, 0x6C, 0x65, 0x2F, 0x4C, 0x69, 0x62, 0x72, 0x61, 0x72, 0x79, 0x2F, 0x50, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6E, 0x63, 0x65, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+    // int64_t sub_ffffff80050f9b20(void* arg1, int64_t* arg2, int32_t arg3, void* arg4)
+    // stp x29, x30, [sp, #-0x10]!
+    // mov x29, sp
+    // stp x20, x19, [sp, #-0x10]!
+    // stp x22, x21, [sp, #-0x10]!
+    // sub sp, sp, #0x410
+    // mov x19, x0
+    // mov x20, x1
+    // mov x21, x2
+    // mov x22, x3
+    // ldr x0, [x22, #0x48]
+    // cmp x0, #0x1
+    // b.ne 0xffffff80050f9bd4
+    // ldr x0, [x22, #0x50]
+    // cbz x0, 0xffffff80050f9bd4
+    // nop
+    // mov x0, #0x18
+    // lsl x0, x0, #0x20
+    // add sp, sp, #0x410
+    // ldp x22, x21, [sp], #0x10
+    // ldp x20, x19, [sp], #0x10
+    // ldp x29, x30, [sp], #0x10
+    // ret -> return 0x1800000000
+    // mov x0, x19
+    // mov x1, x20
+    // mov x2, x21
+    // add sp, sp, #0x410
+    // ldp x22, x21, [sp], #0x10
+    // ldp x20, x19, [sp], #0x10
+    // ldp x29, x30, [sp], #0x10
+    // stp x28, x27, [sp, #-0x60]!
+    // b 0xffffff8004fe35d0 -> sb_evaluate funcbegin insn+0x4
+    uint32_t sb_evaluate = get_sb_evaluate(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+    uint32_t vn_getpath = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+    uint32_t sb_evaluate_offset = get_sb_evaluate_offset(kernel_buf, kernel_len); // xref& bof64
+    uint32_t *payloadAsUint32 = (uint32_t *)payload;
+    uint32_t patchValue;
+    char* str = "\"sks request timeout\"";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
+    if(!ent_loc) {
+        printf("%s: Could not find \"sks request timeout\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sks request timeout\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
+    if(!xref_stuff) {
+        printf("%s: Could not find \"sks request timeout\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sks request timeout\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
+    if(!beg_func) {
+        printf("%s: Could not find \"sks request timeout\" funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sks request timeout\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    beg_func = (addr_t)GET_OFFSET(kernel_len, beg_func); // offset that we use for patching the kernel
+    printf("%s: Patching \"sks request timeout\" at %p\n", __FUNCTION__,(void*)(beg_func));
+    *(uint32_t *) (kernel_buf + beg_func) = 0x52800000; // mov w0, 0x0
+    beg_func = beg_func + 0x4;
+    printf("%s: Patching \"sks request timeout\" at %p\n", __FUNCTION__,(void*)(beg_func));
+    *(uint32_t *) (kernel_buf + beg_func) = 0xD65F03C0; // ret
+    beg_func = beg_func + 0x4;
+    uint64_t sb_evaluate_hook_offset = beg_func;
+    beg_func = (addr_t)GET_OFFSET2(kernel_len, (uintptr_t)beg_func); // kernel offset which we need in order to create bl or b calls
+    uint32_t sb_evaluate_hook = beg_func;
+    uint64_t offset = beg_func;
+    for ( uint32_t i = 0; i < 0x190; ++i )
+    {
+        uint32_t dataOffset = payloadAsUint32[i];
+        if (dataOffset == 0xCCCCCCCC) { // second to last line of our payload function
+            // ios 9.3.5 a9ba6ffc
+            // ios 9.2 a9ba6ffc
+            // ios 9.0 a9ba6ffc
+            // ios 8.4 a9ba6ffc
+            // ios 8.0 a9ba6ffc
+            patchValue = 0xA9BA6FFC; // first insn in the sb_evaluate function from before we modified it
+            // so basically here we are running the instruction from the sb_evaluate function that we removed from earlier
+            payloadAsUint32[i] = patchValue;
+        } else if (dataOffset == 0xDDDDDDDD) {
+            // b unconditional call to the sb_evaluate function
+            uint64_t origin = offset;
+            uint64_t target = get_sb_evaluate(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+            target = target + 0x4; // skip to next line
+            patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x14000000; // 0x14000000 is b
+            payloadAsUint32[i] = patchValue;
+        } else if (dataOffset == 0x11111111) {
+            // bl call to the vn_getpath function
+            uint64_t origin = offset;
+            int64_t target = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+            patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x94000000; // 0x94000000 is bl
+            payloadAsUint32[i] = patchValue;
+        }
+        offset += sizeof(uint32_t);
+    }
+    // insert payload starting at funcbegin insn for the sb_evaluate_hook function
+    offset = sb_evaluate_hook_offset;
+    uint32_t count = sizeof(payload) / sizeof(uint32_t);
+    for(uint32_t i=0; i < count; ++i)
+    {
+        printf("%s: Patching \"sandbox\" at %p\n", __FUNCTION__,(void*)(offset));
+        *(uint32_t *) (kernel_buf + offset) = payloadAsUint32[i];
+        offset += sizeof(uint32_t);
+    }
+    // replace the first line in the sb_evaluate function with a b unconditional call to our payload
+    uint32_t branch_instr = (sb_evaluate_hook - sb_evaluate) >> 2 & 0x3FFFFFF | 0x14000000; // 0x14000000 is b
+    *(uint32_t *) (kernel_buf + sb_evaluate_offset) = branch_instr;
+    return 0;
+}
+
 // iOS 11 arm64
 int get_amfi_out_of_my_way_patch_ios11(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
@@ -1147,6 +1265,7 @@ int main(int argc, char **argv) {
         printf("\t-t\t\tPatch tfp0 (iOS 8, 9& 10 Only)\n");
         printf("\t-p\t\tPatch sandbox_trace (iOS 8& 9 Only)\n");
         printf("\t-g\t\tPatch sandbox (iOS 8 Only)\n");
+        printf("\t-j\t\tPatch sandbox (iOS 9 Only)\n");
         printf("\t-v\t\tPatch virtual bool AppleSEPManager::start(IOService *) (iOS 9 Only)\n");
         printf("\t-k\t\tPatch sks request timeout (iOS 7 Only)\n");
         printf("\t-u\t\tPatch amfi_get_out_of_my_way (iOS 11, 12, 13& 14 Only)\n");
@@ -1251,6 +1370,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-g") == 0) {
             printf("Kernel: Adding sandbox patch...\n");
             get_sandbox_patch_ios8(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-j") == 0) {
+            printf("Kernel: Adding sandbox patch...\n");
+            get_sandbox_patch_ios9(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-v") == 0) {
             printf("Kernel: Adding virtual bool AppleSEPManager::start(IOService *) patch...\n");
