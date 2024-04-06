@@ -1387,12 +1387,13 @@ int get_sandbox_patch_ios10(void* kernel_buf,size_t kernel_len) {
     {
         uint32_t dataOffset = payloadAsUint32[i];
         if (dataOffset == 0xCCCCCCCC) { // second to last line of our payload function
+            // ios 10.2.1 a90167fa
             // ios 9.3.5 a9ba6ffc
             // ios 9.2 a9ba6ffc
             // ios 9.0 a9ba6ffc
             // ios 8.4 a9ba6ffc
             // ios 8.0 a9ba6ffc
-            patchValue = 0xA9BA6FFC; // first insn in the sb_evaluate function from before we modified it
+            patchValue = 0xa90167fa; // first insn in the sb_evaluate function from before we modified it
             // so basically here we are running the instruction from the sb_evaluate function that we removed from earlier
             payloadAsUint32[i] = patchValue;
         } else if (dataOffset == 0xDDDDDDDD) {
