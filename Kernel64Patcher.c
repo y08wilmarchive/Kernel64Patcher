@@ -793,7 +793,7 @@ addr_t get_sb_evaluate(void* kernel_buf,size_t kernel_len) {
 
 addr_t get_sb_evaluate_10(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
-    char* str = "bad string";
+    char* str = "bad string size";
     void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
     if(!ent_loc) {
         printf("%s: Could not find \"rootless_entitlement\" string\n",__FUNCTION__);
@@ -878,7 +878,7 @@ addr_t get_sb_evaluate_offset_10(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // rootless_entitlement
     // %s[%d] Container: %s (sandbox)\n
-    char* str = "bad string";
+    char* str = "bad string size";
     void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str));
     if(!ent_loc) {
         printf("%s: Could not find \"rootless_entitlement\" string\n",__FUNCTION__);
