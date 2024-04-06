@@ -1353,7 +1353,7 @@ int get_sandbox_patch_ios10(void* kernel_buf,size_t kernel_len) {
     uint32_t sb_evaluate_offset = get_sb_evaluate_offset_10(kernel_buf, kernel_len); // xref& bof64
     uint32_t *payloadAsUint32 = (uint32_t *)payload;
     uint32_t patchValue;
-    char* str = "\"sks request timeout\"";
+    char* str = "AppleKeyStore: sks timeout strike %d\n";
     void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
     if(!ent_loc) {
         printf("%s: Could not find \"sks request timeout\" string\n",__FUNCTION__);
