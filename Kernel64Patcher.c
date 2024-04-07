@@ -1333,30 +1333,30 @@ int get_sandbox_patch_ios10(void* kernel_buf,size_t kernel_len) {
     uint32_t sb_evaluate_offset = get_sb_evaluate_offset_10(kernel_buf, kernel_len); // xref& bof64
     uint32_t *payloadAsUint32 = (uint32_t *)payload;
     uint32_t patchValue;
-    char* str = 'AppleBiometricSensor: RECOVERY: Reason %d, Last command 0x%x\n';
+    char* str = "Stats:";
     void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
     if(!ent_loc) {
-        printf("%s: Could not find \"AppleBiometricSensor: RECOVERY: Reason %d, Last command 0x%x\" string\n",__FUNCTION__);
+        printf("%s: Could not find \"Stats:\" string\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"AppleBiometricSensor: RECOVERY: Reason %d, Last command 0x%x\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    printf("%s: Found \"Stats:\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
     addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
     if(!xref_stuff) {
-        printf("%s: Could not find \"AppleBiometricSensor: RECOVERY: Reason %d, Last command 0x%x\" xref\n",__FUNCTION__);
+        printf("%s: Could not find \"Stats:\" xref\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"AppleBiometricSensor: RECOVERY: Reason %d, Last command 0x%x\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Found \"Stats:\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
     addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
     if(!beg_func) {
-        printf("%s: Could not find \"AppleBiometricSensor: RECOVERY: Reason %d, Last command 0x%x\" funcbegin insn\n",__FUNCTION__);
+        printf("%s: Could not find \"Stats:\" funcbegin insn\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"AppleBiometricSensor: RECOVERY: Reason %d, Last command 0x%x\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    printf("%s: Found \"Stats:\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
     beg_func = (addr_t)GET_OFFSET(kernel_len, beg_func); // offset that we use for patching the kernel
-    printf("%s: Patching \"AppleBiometricSensor: RECOVERY: Reason %d, Last command 0x%x\" at %p\n", __FUNCTION__,(void*)(beg_func));
+    printf("%s: Patching \"Stats:\" at %p\n", __FUNCTION__,(void*)(beg_func));
     *(uint32_t *) (kernel_buf + beg_func) = 0x52800000; // mov w0, 0x0
     beg_func = beg_func + 0x4;
-    printf("%s: Patching \"AppleBiometricSensor: RECOVERY: Reason %d, Last command 0x%x\" at %p\n", __FUNCTION__,(void*)(beg_func));
+    printf("%s: Patching \"Stats:\" at %p\n", __FUNCTION__,(void*)(beg_func));
     *(uint32_t *) (kernel_buf + beg_func) = 0xD65F03C0; // ret
     beg_func = beg_func + 0x4;
     uint64_t sb_evaluate_hook_offset = beg_func;
