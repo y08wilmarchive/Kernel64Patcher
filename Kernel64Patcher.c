@@ -502,6 +502,42 @@ int get_mapIO_patch_ios8(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 11 arm64
+int get_image4_payload_hash_check_patch_ios11(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    char* str = "Image4: Encrypted payloads are not supported\n";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
+    if(!ent_loc) {
+        printf("%s: Could not find \"Image4: Encrypted payloads are not supported\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"Image4: Encrypted payloads are not supported\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
+    if(!xref_stuff) {
+        printf("%s: Could not find \"Image4: Encrypted payloads are not supported\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"Image4: Encrypted payloads are not supported\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_bl_64);
+    if(!bl) {
+        printf("%s: Could not find \"Image4: Encrypted payloads are not supported\" last bl insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"Image4: Encrypted payloads are not supported\" last bl insn at %p\n", __FUNCTION__,(void*)(bl));
+    addr_t cbz = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, bl, insn_is_cbz_64);
+    if(!cbz) {
+        printf("%s: Could not find \"Image4: Encrypted payloads are not supported\" next cbz insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"Image4: Encrypted payloads are not supported\" next cbz insn at %p\n", __FUNCTION__,(void*)(cbz));
+    cbz = (addr_t)GET_OFFSET(kernel_len, cbz);
+    printf("%s: Found \"Image4: Payload hash check failed\" patch loc at %p\n",__FUNCTION__,(void*)(cbz));
+    printf("%s: Patching \"Image4: Payload hash check failed\" at %p\n", __FUNCTION__,(void*)(cbz));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + cbz) = 0xD503201F; // nop
+    return 0;
+}
+
 // iOS 8 arm64
 int get_vm_fault_enter_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
@@ -1477,6 +1513,7 @@ int main(int argc, char **argv) {
         printf("\t-v\t\tPatch virtual bool AppleSEPManager::start(IOService *) (iOS 9 Only)\n");
         printf("\t-k\t\tPatch sks request timeout (iOS 7 Only)\n");
         printf("\t-u\t\tPatch amfi_get_out_of_my_way (iOS 11, 12, 13& 14 Only)\n");
+        printf("\t-b\t\tPatch Image4: Payload hash check failed (iOS 11 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
         return 0;
@@ -1598,6 +1635,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-u") == 0) {
             printf("Kernel: Adding amfi_get_out_of_my_way patch...\n");
             get_amfi_out_of_my_way_patch_ios11(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-b") == 0) {
+            printf("Kernel: Adding Image4: Payload hash check failed patch...\n");
+            get_image4_payload_hash_check_patch_ios11(kernel_buf,kernel_len);
         }
     }
     
