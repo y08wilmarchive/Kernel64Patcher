@@ -29,6 +29,42 @@
 #define _MOVZW(r, i, s) (0x52800000 | (((s) & 0x30) << 17) | (((i) & 0xFFFF) << 5) | ((r) & 0x1F))
 #define _NOP() 0xD503201F
 
+// load firmware which are not signed like AOP.img4, Homer.img4, etc. ios 13
+int bypassFirmwareValidate13(void* kernel_buf,size_t kernel_len) {
+
+    printf("%s: Entering ...\n",__FUNCTION__);
+
+    char first_string[45] = "Image4: Encrypted payloads are not supported";
+    void* found = memmem(kernel_buf,kernel_len,first_string,44);
+    if(!found) {
+        printf("%s: Could not find \"Image4: Encrypted payloads are not supported, OMITING PATCHING...\" string\n",__FUNCTION__);
+        return -1;
+    }
+
+    printf("%s: Found \"Image4: Encrypted payloads are not supported\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
+    addr_t found_ref = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, found));
+
+    if(!found_ref) {
+        printf("%s: Could not find \"xref of Image4: Encrypted payloads are not supported\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"Image4: Encrypted payloads are not supported\" xref at %p\n",__FUNCTION__,(void*)found);
+
+    printf("%s: Patching \"patching  Img4DecodePerformTrustEvaluatation failed branch \" at %p\n\n", __FUNCTION__,(void*)(found_ref - 0xd8));
+    *(uint32_t *) (kernel_buf + found_ref - 0xd8) = 0xd503201f; // nop to avoid jump
+
+    printf("%s: Patching \"patching Image4: Invalid board id branch \" at %p\n\n", __FUNCTION__,(void*)(found_ref - 0xc8));
+    *(uint32_t *) (kernel_buf + found_ref - 0xc8) = 0xd503201f; // nop to avoid jump
+
+    printf("%s: Patching \"patching Image4: Invalid ecid branch \" at %p\n\n", __FUNCTION__,(void*)(found_ref - 0x98));
+    *(uint32_t *) (kernel_buf + found_ref - 0x98) = 0xd503201f; // nop to avoid jump
+
+    printf("%s: Patching \"patching 'Payload hash check failed' branch \" at %p\n\n", __FUNCTION__,(void*)(found_ref - 0x40));
+    *(uint32_t *) (kernel_buf + found_ref - 0x40) = 0xd503201f; // nop to avoid jump
+
+    return 0;
+}
+
 // iOS 7 arm64
 int get_vm_map_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
     // search 0A 05 1F 12 09 79 1D 12
@@ -1513,9 +1549,11 @@ int main(int argc, char **argv) {
         printf("\t-v\t\tPatch virtual bool AppleSEPManager::start(IOService *) (iOS 9 Only)\n");
         printf("\t-k\t\tPatch sks request timeout (iOS 7 Only)\n");
         printf("\t-u\t\tPatch amfi_get_out_of_my_way (iOS 11, 12, 13& 14 Only)\n");
-        printf("\t-b\t\tPatch Image4: Payload hash check failed (iOS 11 Only)\n");
+        printf("\t-q\t\tPatch Image4: Payload hash check failed (iOS 11 Only)\n");
+        printf("\t-b\t\tBypassFirmwareValidate (IOS11 TESTED) until ios 13 iirc\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
+
         return 0;
     }
     
@@ -1636,9 +1674,13 @@ int main(int argc, char **argv) {
             printf("Kernel: Adding amfi_get_out_of_my_way patch...\n");
             get_amfi_out_of_my_way_patch_ios11(kernel_buf,kernel_len);
         }
-        if(strcmp(argv[i], "-b") == 0) {
+        if(strcmp(argv[i], "-q") == 0) {
             printf("Kernel: Adding Image4: Payload hash check failed patch...\n");
             get_image4_payload_hash_check_patch_ios11(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-b") == 0) {
+            printf("Kernel: Adding FUD/ BypassFirmwareValidate patch...\n");
+            bypassFirmwareValidate13(kernel_buf,kernel_len);
         }
     }
     
