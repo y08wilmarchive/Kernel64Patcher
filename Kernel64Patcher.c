@@ -148,6 +148,176 @@ int get_image4_context_validate_patch_ios10(void* kernel_buf,size_t kernel_len) 
     return 0;
 }
 
+// load firmware which are not signed like AOP.img4, Homer.img4, etc. ios 12
+int get_image4_context_validate_patch_ios12jfioewjfewoifjew(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    {
+        char* str = "RTBuddyImage4: Invalid epoch.\n";
+        void* found = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
+        if(!found) {
+            printf("%s: Could not find \"RTBuddyImage4: Invalid epoch.\" string\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"RTBuddyImage4: Invalid epoch.\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
+        addr_t found_ref = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, found));
+        if(!found_ref) {
+            printf("%s: Could not find \"RTBuddyImage4: Invalid epoch.\" xref\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"RTBuddyImage4: Invalid epoch.\" xref at %p\n",__FUNCTION__,(void*)found);
+        printf("%s: Patching \"RTBuddyImage4: Invalid epoch.\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x14 - 0xC));
+        *(uint32_t *) (kernel_buf + found_ref - 0x14 - 0xC) = 0x52800068; // mov w8, 0x3
+        printf("%s: Patching \"RTBuddyImage4: Invalid epoch.\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x10 - 0xC));
+        *(uint32_t *) (kernel_buf + found_ref - 0x10 - 0xC) = 0x52800029; // mov w9, 0x1
+        printf("%s: Patching \"RTBuddyImage4: Invalid board id\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x28 - 0xC));
+        *(uint32_t *) (kernel_buf + found_ref - 0x28 - 0xC) = 0xd503201f; // nop to avoid jump
+        printf("%s: Patching \"RTBuddyImage4: Invalid chip id\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x18 - 0xC));
+        *(uint32_t *) (kernel_buf + found_ref - 0x18 - 0xC) = 0xd503201f; // nop to avoid jump
+    }
+    {
+        char* str = "RTBuddyImage4: Invalid chip id\n";
+        void* found = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
+        if(!found) {
+            printf("%s: Could not find \"RTBuddyImage4: Invalid chip id\" string\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"RTBuddyImage4: Invalid chip id\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
+        addr_t found_ref = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, found));
+        if(!found_ref) {
+            printf("%s: Could not find \"RTBuddyImage4: Invalid chip id\" xref\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"RTBuddyImage4: Invalid chip id\" xref at %p\n",__FUNCTION__,(void*)found);
+        printf("%s: Patching \"RTBuddyImage4: Invalid production status\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x24 + 0xC));
+        *(uint32_t *) (kernel_buf + found_ref + 0x24 + 0xC) = 0xd503201f; // nop to avoid jump
+        printf("%s: Patching \"RTBuddyImage4: Invalid security mode\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x34 + 0xC));
+        *(uint32_t *) (kernel_buf + found_ref + 0x34 + 0xC) = 0xd503201f; // nop to avoid jump
+        printf("%s: Patching \"RTBuddyImage4: Invalid security domain.\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x44 + 0xC));
+        *(uint32_t *) (kernel_buf + found_ref + 0x44 + 0xC) = 0xd503201f; // nop to avoid jump
+        printf("%s: Patching \"RTBuddyImage4: Invalid ecid\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x14 + 0xC));
+        *(uint32_t *) (kernel_buf + found_ref + 0x14 + 0xC) = 0xd503201f; // nop to avoid jump
+        printf("%s: Patching \"RTBuddyImage4: Payload hash check failed\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x68 + 0xC));
+        *(uint32_t *) (kernel_buf + found_ref + 0x68 + 0xC) = 0x52800000; // mov w0, 0x0
+    }
+    {
+        char* str = "RTBuddyImage4: Invalid epoch.\n";
+        void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
+        if(!ent_loc) {
+            printf("%s: Could not find \"RTBuddyImage4: Invalid epoch.\" string\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"RTBuddyImage4: Invalid epoch.\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+        addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
+        if(!xref_stuff) {
+            printf("%s: Could not find \"RTBuddyImage4: Invalid epoch.\" xref\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"RTBuddyImage4: Invalid epoch.\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+        addr_t bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_bl_64);
+        if(!bl) {
+            printf("%s: Could not find \"RTBuddyImage4: Invalid epoch.\" last bl insn\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"RTBuddyImage4: Invalid epoch.\" last bl insn at %p\n", __FUNCTION__,(void*)(bl));
+        bl = (addr_t)GET_OFFSET(kernel_len, bl);
+        printf("%s: Found \"Img4DecodeEvaluateTrust failed\" patch loc at %p\n",__FUNCTION__,(void*)(bl));
+        printf("%s: Patching \"Img4DecodeEvaluateTrust failed\" at %p\n", __FUNCTION__,(void*)(bl));
+        // 0xD503201F is nop
+        *(uint32_t *) (kernel_buf + bl) = 0x52800000; // mov w0, 0x0
+        bl = bl - 0x18;
+        printf("%s: Patching \"RTBuddyImage4: Expected tag: , received tag: \" at %p\n", __FUNCTION__,(void*)(bl));
+        *(uint32_t *) (kernel_buf + bl) = 0xd503201f; // nop to avoid jump
+    }
+    return 0;
+}
+
+// load firmware which are not signed like AOP.img4, Homer.img4, etc. ios 12
+int get_image4_context_validate_patch_ios12(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    {
+        uint8_t search[] = { 0xe0, 0xc3, 0x00, 0x91, 0xe1, 0x03, 0x13, 0xaa, 0xe3, 0x03, 0x14, 0xaa };
+        void* found = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+        if (!found) {
+            printf("%s: Could not find \"Img4DecodePerformTrustEvaluatation\" patch\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"Img4DecodePerformTrustEvaluatation\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
+        addr_t found_ref = (addr_t)GET_OFFSET(kernel_len, found);
+        if(!found_ref) {
+            printf("%s: Could not find \"Img4DecodePerformTrustEvaluatation\" xref\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"Img4DecodePerformTrustEvaluatation\" xref at %p\n",__FUNCTION__,(void*)found);
+        printf("%s: Patching \"Img4DecodePerformTrustEvaluatation\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x30));
+        *(uint32_t *) (kernel_buf + found_ref + 0x30) = 0xd503201f; // nop to avoid jump
+    }
+    {
+        uint8_t search[] = { 0x62, 0x2e, 0x40, 0xf9, 0xe0, 0x03, 0x14, 0xaa, 0xe1, 0x03, 0x15, 0xaa };
+        void* found = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+        if (!found) {
+            printf("%s: Could not find \"Image4: Payload hash check failed\" patch\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"Image4: Payload hash check failed\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
+        addr_t found_ref = (addr_t)GET_OFFSET(kernel_len, found);
+        if(!found_ref) {
+            printf("%s: Could not find \"Image4: Payload hash check failed\" xref\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"Image4: Payload hash check failed\" xref at %p\n",__FUNCTION__,(void*)found);
+        found_ref = found_ref + 0x18;
+        printf("%s: Patching \"Image4: Payload hash check failed\" at %p\n", __FUNCTION__,(void*)(found_ref - 0xC));
+        *(uint32_t *) (kernel_buf + found_ref - 0xC) = 0x52800000; // mov w0, 0x0
+        printf("%s: Patching \"Image4: Invalid security domain.\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x7c));
+        *(uint32_t *) (kernel_buf + found_ref - 0x7c) = 0x52800008; // mov w8, 0x0
+        printf("%s: Patching \"Image4: Invalid security domain.\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x78));
+        *(uint32_t *) (kernel_buf + found_ref - 0x78) = 0x52800009; // mov w9, 0x0
+        printf("%s: Patching \"Image4: Invalid chip id\" at %p\n", __FUNCTION__,(void*)(found_ref - 0xcc));
+        *(uint32_t *) (kernel_buf + found_ref - 0xcc) = 0x52800008; // mov w8, 0x0
+        printf("%s: Patching \"Image4: Invalid chip id\" at %p\n", __FUNCTION__,(void*)(found_ref - 0xc8));
+        *(uint32_t *) (kernel_buf + found_ref - 0xc8) = 0x52800009; // mov w9, 0x0
+        printf("%s: Patching \"Image4: Invalid security mode\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x154));
+        *(uint32_t *) (kernel_buf + found_ref - 0x154) = 0x52800008; // mov w8, 0x0
+        printf("%s: Patching \"Image4: Invalid security mode\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x150));
+        *(uint32_t *) (kernel_buf + found_ref - 0x150) = 0x52800009; // mov w9, 0x0
+        printf("%s: Patching \"Image4: Invalid board id\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x21c));
+        *(uint32_t *) (kernel_buf + found_ref - 0x21c) = 0x52800008; // mov w8, 0x0
+        printf("%s: Patching \"Image4: Invalid board id\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x218));
+        *(uint32_t *) (kernel_buf + found_ref - 0x218) = 0x52800009; // mov w9, 0x0
+    }
+    {
+        uint8_t search[] = { 0x68, 0xa2, 0x40, 0xb9, 0x69, 0x12, 0x40, 0xb9 };
+        void* found = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+        if (!found) {
+            printf("%s: Could not find \"Image4: Invalid epoch.\" patch\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"Image4: Invalid epoch.\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
+        addr_t found_ref = (addr_t)GET_OFFSET(kernel_len, found);
+        if(!found_ref) {
+            printf("%s: Could not find \"Image4: Invalid epoch.\" xref\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"Image4: Invalid epoch.\" xref at %p\n",__FUNCTION__,(void*)found);
+        found_ref = found_ref - 0x1c;
+        printf("%s: Patching \"Image4: Invalid production status\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x14));
+        *(uint32_t *) (kernel_buf + found_ref - 0x14) = 0x52800008; // mov w8, 0x0
+        printf("%s: Patching \"Image4: Invalid production status\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x10));
+        *(uint32_t *) (kernel_buf + found_ref - 0x10) = 0x52800009; // mov w9, 0x0
+
+        printf("%s: Patching \"Image4: Invalid epoch.\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x1c));
+        *(uint32_t *) (kernel_buf + found_ref + 0x1c) = 0x52800068; // mov w8, 0x3
+        printf("%s: Patching \"Image4: Invalid epoch.\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x20));
+        *(uint32_t *) (kernel_buf + found_ref + 0x20) = 0x52800029; // mov w9, 0x1
+
+        printf("%s: Patching \"Image4: Invalid ecid\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x4c));
+        *(uint32_t *) (kernel_buf + found_ref + 0x4c) = 0xd2800008; // mov x8, 0x0
+        printf("%s: Patching \"Image4: Invalid ecid\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x50));
+        *(uint32_t *) (kernel_buf + found_ref + 0x50) = 0xd2800009; // mov x9, 0x0
+    }
+    return 0;
+}
+
 // iOS 7 arm64
 int get_vm_map_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
     // search 0A 05 1F 12 09 79 1D 12
@@ -829,6 +999,43 @@ int get_vm_fault_enter_patch_ios11(void* kernel_buf,size_t kernel_len) {
     xref_stuff = xref_stuff + 0x4; // move to str w13, [sp, #0x100]
     printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
     *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002a; // mov w10, 0x1
+    return 0;
+}
+
+// iOS 12 arm64
+int get_vm_fault_enter_patch_ios12(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    uint8_t search[] = { 0x2b, 0x01, 0x18, 0x12, 0x6a, 0x01, 0x0a, 0x2a };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(ent_loc));
+    addr_t first_b = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_b_unconditional_64);
+    if(!first_b) {
+        printf("%s: Could not find \"vm_fault_enter\" last b insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" last b insn at %p\n", __FUNCTION__,(void*)(first_b));
+    addr_t second_b = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, first_b, insn_is_b_unconditional_64);
+    if(!second_b) {
+        printf("%s: Could not find \"vm_fault_enter\" last b insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" last b insn at %p\n", __FUNCTION__,(void*)(second_b));
+    addr_t tbz = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, second_b, insn_is_tbz);
+    if(!tbz) {
+        printf("%s: Could not find \"vm_fault_enter\" last tbz insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" last tbz insn at %p\n", __FUNCTION__,(void*)(tbz));
+    tbz = (addr_t)GET_OFFSET(kernel_len, tbz);
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,(void*)(tbz));
+    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(tbz));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + tbz) = 0xD503201F; // nop
     return 0;
 }
 
@@ -1634,6 +1841,7 @@ int main(int argc, char **argv) {
         printf("\t-u\t\tPatch amfi_get_out_of_my_way (iOS 11, 12, 13& 14 Only)\n");
         printf("\t-q\t\tPatch image4_context_validate failed (iOS 10 Only)\n");
         printf("\t-b\t\tPatch image4_context_validate failed (iOS 11.1 Only)\n");
+        printf("\t-r\t\tPatch image4_context_validate failed (iOS 12 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
 
@@ -1701,6 +1909,7 @@ int main(int argc, char **argv) {
             get_vm_fault_enter_patch_ios9(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios10(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios11(kernel_buf,kernel_len);
+            get_vm_fault_enter_patch_ios12(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-m") == 0) {
             printf("Kernel: Adding mount_common patch...\n");
@@ -1764,6 +1973,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-b") == 0) {
             printf("Kernel: Adding image4_context_validate failed patch...\n");
             get_image4_context_validate_patch_ios11(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-r") == 0) {
+            printf("Kernel: Adding image4_context_validate failed patch...\n");
+            get_image4_context_validate_patch_ios12(kernel_buf,kernel_len);
         }
     }
     
