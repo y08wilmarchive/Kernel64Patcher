@@ -1830,6 +1830,54 @@ int get__MKBGetDeviceLockState_patch_ios8(void* kernel_buf,size_t kernel_len, ad
     return 0;
 }
 
+// iOS 9 arm64
+int get__MKBDeviceUnlockedSinceBoot_patch_ios9(void* kernel_buf,size_t kernel_len, addr_t _convertAKSErrorToMKB, addr_t _debuglog) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search 68000034e0030032
+    uint8_t search[] = { 0x68, 0x00, 0x00, 0x34, 0xe0, 0x03, 0x00, 0x32 };
+    void* ent_loc = memmem(kernel_buf+_debuglog, kernel_len-_debuglog, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"_MKBDeviceUnlockedSinceBoot\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_funcbegin_64);
+    if(!beg_func) {
+        printf("%s: Could not find \"_MKBDeviceUnlockedSinceBoot\" funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,beg_func));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, beg_func);
+    printf("%s: Patching \"_MKBDeviceUnlockedSinceBoot\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x52800020; // mov w0, 0x1
+    xref_stuff = xref_stuff + 0x4;
+    printf("%s: Patching \"_MKBDeviceUnlockedSinceBoot\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD65F03C0; // ret
+    xref_stuff = xref_stuff + 0x4;
+    return 0;
+}
+
+// iOS 9 arm64
+int get__MKBGetDeviceLockState_patch_ios9(void* kernel_buf,size_t kernel_len, addr_t _convertAKSErrorToMKB, addr_t _debuglog) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search fd7bbfa9fd030091ffc300d1ff530079ffff01a9ffff00a9ff0300f9
+    uint8_t search[] = { 0xfd, 0x7b, 0xbf, 0xa9, 0xfd, 0x03, 0x00, 0x91, 0xff, 0xc3, 0x00, 0xd1, 0xff, 0x53, 0x00, 0x79, 0xff, 0xff, 0x01, 0xa9, 0xff, 0xff, 0x00, 0xa9, 0xff, 0x03, 0x00, 0xf9 };
+    void* ent_loc = memmem(kernel_buf+_debuglog, kernel_len-_debuglog, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"_MKBGetDeviceLockState\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"_MKBGetDeviceLockState\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Patching \"_MKBGetDeviceLockState\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x52800060; // mov w0, 0x3
+    xref_stuff = xref_stuff + 0x4;
+    printf("%s: Patching \"_MKBGetDeviceLockState\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD65F03C0; // ret
+    xref_stuff = xref_stuff + 0x4;
+    return 0;
+}
+
 int main(int argc, char **argv) {
     
     printf("%s: Starting...\n", __FUNCTION__);
@@ -1857,7 +1905,8 @@ int main(int argc, char **argv) {
         printf("\t-q\t\tPatch image4_context_validate failed (iOS 10 Only)\n");
         printf("\t-b\t\tPatch image4_context_validate failed (iOS 11.1 Only)\n");
         printf("\t-r\t\tPatch image4_context_validate failed (iOS 12 Only)\n");
-        printf("\t-z\t\tPatch _MKBDeviceUnlockedSinceBoot and _MKBGetDeviceLockState (iOS 8 Only)\n");
+        printf("\t-z\t\tPatch _MKBDeviceUnlockedSinceBoot (iOS 8 Only)\n");
+        printf("\t-x\t\tPatch _MKBDeviceUnlockedSinceBoot (iOS 9 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
 
@@ -1913,6 +1962,24 @@ int main(int argc, char **argv) {
             get__MKBGetDeviceLockState_patch_ios8(kernel_buf,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
             printf("Kernel: Adding _MKBDeviceUnlockedSinceBoot patch...\n");
             get__MKBDeviceUnlockedSinceBoot_patch_ios8(kernel_buf,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
+        }
+        if(strcmp(argv[i], "-x") == 0) {
+            uint8_t _convertAKSErrorToMKB_search[] = { 0xfd, 0x7b, 0xbf, 0xa9, 0xfd, 0x03, 0x00, 0x91, 0xff, 0x43, 0x00, 0xd1, 0x1f, 0x24, 0x00, 0x31, 0x8c, 0x02, 0x00, 0x54, 0x08, 0x00, 0xbc, 0x52, 0xe8, 0x5d, 0x80, 0x72, 0x1f, 0x00, 0x08, 0x6b, 0x8c, 0x02, 0x00, 0x54, 0xe8, 0x7b, 0x1f, 0x32, 0x09, 0x00, 0xbc, 0x52, 0xa9, 0x59, 0x80, 0x72, 0x1f, 0x00, 0x09, 0x6b, 0x0c, 0x03, 0x00, 0x54, 0x09, 0x00, 0xbc, 0x52, 0x29, 0x58, 0x80, 0x72, 0x1f, 0x00, 0x09, 0x6b, 0x80, 0x04, 0x00, 0x54, 0x08, 0x00, 0xbc, 0x52, 0x28, 0x59, 0x80, 0x72, 0x1f, 0x00, 0x08, 0x6b, 0x41, 0x03, 0x00, 0x54, 0xe8, 0x7b, 0x1c, 0x32, 0x1e, 0x00, 0x00, 0x14, 0x1f, 0x20, 0x00, 0x31, 0x21, 0x01, 0x00, 0x54, 0xa8, 0x01, 0x80, 0x12, 0x1a, 0x00, 0x00, 0x14, 0x08, 0x00, 0xbc, 0x52, 0x08, 0x5e, 0x80, 0x72, 0x1f, 0x00, 0x08, 0x6b, 0x01, 0x02, 0x00, 0x54, 0xe8, 0x73, 0x1d, 0x32, 0x14, 0x00, 0x00, 0x14, 0x08, 0x00, 0x80, 0x52, 0x40, 0x02, 0x00, 0x34, 0x0b, 0x00, 0x00, 0x14, 0x09, 0x00, 0xbc, 0x52, 0xc9, 0x59, 0x80, 0x72, 0x1f, 0x00, 0x09, 0x6b, 0x61, 0x00, 0x00, 0x54, 0xe8, 0x7b, 0x1e, 0x32, 0x0b, 0x00, 0x00, 0x14, 0x09, 0x00, 0xbc, 0x52, 0x49, 0x5c, 0x80, 0x72, 0x1f, 0x00, 0x09, 0x6b, 0xe0, 0x00, 0x00, 0x54 };
+            void* _convertAKSErrorToMKB = memmem(kernel_buf, kernel_len, _convertAKSErrorToMKB_search, sizeof(_convertAKSErrorToMKB_search) / sizeof(*_convertAKSErrorToMKB_search));
+            if (!_convertAKSErrorToMKB) {
+                printf("%s: Could not find \"_convertAKSErrorToMKB\"\n",__FUNCTION__);
+                return -1;
+            }
+            uint8_t _debuglog_search[] = { 0xfc, 0x6f, 0xbc, 0xa9, 0xf6, 0x57, 0x01, 0xa9, 0xf4, 0x4f, 0x02, 0xa9, 0xfd, 0x7b, 0x03, 0xa9, 0xfd, 0xc3, 0x00, 0x91, 0xff, 0x83, 0x20, 0xd1 };
+            void* _debuglog = memmem(kernel_buf+(addr_t)GET_OFFSET(kernel_len, _convertAKSErrorToMKB)-0xC95C, kernel_len-(addr_t)GET_OFFSET(kernel_len, _convertAKSErrorToMKB)+0xC95C, _debuglog_search, sizeof(_debuglog_search) / sizeof(*_debuglog_search));
+            if (!_debuglog) {
+                printf("%s: Could not find \"_debuglog\"\n",__FUNCTION__);
+                return -1;
+            }
+            printf("Kernel: Adding _MKBGetDeviceLockState patch...\n");
+            get__MKBGetDeviceLockState_patch_ios9(kernel_buf,kernel_len,(addr_t)GET_OFFSET(kernel_len, _convertAKSErrorToMKB), (addr_t)GET_OFFSET(kernel_len, _debuglog));
+            printf("Kernel: Adding _MKBDeviceUnlockedSinceBoot patch...\n");
+            get__MKBDeviceUnlockedSinceBoot_patch_ios9(kernel_buf,kernel_len,(addr_t)GET_OFFSET(kernel_len, _convertAKSErrorToMKB), (addr_t)GET_OFFSET(kernel_len, _debuglog));
         }
         if(strcmp(argv[i], "-e") == 0) {
             printf("Kernel: Adding vm_map_enter patch...\n");
