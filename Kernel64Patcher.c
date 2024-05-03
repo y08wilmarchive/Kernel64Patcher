@@ -149,89 +149,6 @@ int get_image4_context_validate_patch_ios10(void* kernel_buf,size_t kernel_len) 
 }
 
 // load firmware which are not signed like AOP.img4, Homer.img4, etc. ios 12
-int get_image4_context_validate_patch_ios12jfioewjfewoifjew(void* kernel_buf,size_t kernel_len) {
-    printf("%s: Entering ...\n",__FUNCTION__);
-    {
-        char* str = "RTBuddyImage4: Invalid epoch.\n";
-        void* found = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
-        if(!found) {
-            printf("%s: Could not find \"RTBuddyImage4: Invalid epoch.\" string\n",__FUNCTION__);
-            return -1;
-        }
-        printf("%s: Found \"RTBuddyImage4: Invalid epoch.\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
-        addr_t found_ref = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, found));
-        if(!found_ref) {
-            printf("%s: Could not find \"RTBuddyImage4: Invalid epoch.\" xref\n",__FUNCTION__);
-            return -1;
-        }
-        printf("%s: Found \"RTBuddyImage4: Invalid epoch.\" xref at %p\n",__FUNCTION__,(void*)found);
-        printf("%s: Patching \"RTBuddyImage4: Invalid epoch.\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x14 - 0xC));
-        *(uint32_t *) (kernel_buf + found_ref - 0x14 - 0xC) = 0x52800068; // mov w8, 0x3
-        printf("%s: Patching \"RTBuddyImage4: Invalid epoch.\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x10 - 0xC));
-        *(uint32_t *) (kernel_buf + found_ref - 0x10 - 0xC) = 0x52800029; // mov w9, 0x1
-        printf("%s: Patching \"RTBuddyImage4: Invalid board id\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x28 - 0xC));
-        *(uint32_t *) (kernel_buf + found_ref - 0x28 - 0xC) = 0xd503201f; // nop to avoid jump
-        printf("%s: Patching \"RTBuddyImage4: Invalid chip id\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x18 - 0xC));
-        *(uint32_t *) (kernel_buf + found_ref - 0x18 - 0xC) = 0xd503201f; // nop to avoid jump
-    }
-    {
-        char* str = "RTBuddyImage4: Invalid chip id\n";
-        void* found = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
-        if(!found) {
-            printf("%s: Could not find \"RTBuddyImage4: Invalid chip id\" string\n",__FUNCTION__);
-            return -1;
-        }
-        printf("%s: Found \"RTBuddyImage4: Invalid chip id\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
-        addr_t found_ref = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, found));
-        if(!found_ref) {
-            printf("%s: Could not find \"RTBuddyImage4: Invalid chip id\" xref\n",__FUNCTION__);
-            return -1;
-        }
-        printf("%s: Found \"RTBuddyImage4: Invalid chip id\" xref at %p\n",__FUNCTION__,(void*)found);
-        printf("%s: Patching \"RTBuddyImage4: Invalid production status\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x24 + 0xC));
-        *(uint32_t *) (kernel_buf + found_ref + 0x24 + 0xC) = 0xd503201f; // nop to avoid jump
-        printf("%s: Patching \"RTBuddyImage4: Invalid security mode\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x34 + 0xC));
-        *(uint32_t *) (kernel_buf + found_ref + 0x34 + 0xC) = 0xd503201f; // nop to avoid jump
-        printf("%s: Patching \"RTBuddyImage4: Invalid security domain.\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x44 + 0xC));
-        *(uint32_t *) (kernel_buf + found_ref + 0x44 + 0xC) = 0xd503201f; // nop to avoid jump
-        printf("%s: Patching \"RTBuddyImage4: Invalid ecid\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x14 + 0xC));
-        *(uint32_t *) (kernel_buf + found_ref + 0x14 + 0xC) = 0xd503201f; // nop to avoid jump
-        printf("%s: Patching \"RTBuddyImage4: Payload hash check failed\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x68 + 0xC));
-        *(uint32_t *) (kernel_buf + found_ref + 0x68 + 0xC) = 0x52800000; // mov w0, 0x0
-    }
-    {
-        char* str = "RTBuddyImage4: Invalid epoch.\n";
-        void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
-        if(!ent_loc) {
-            printf("%s: Could not find \"RTBuddyImage4: Invalid epoch.\" string\n",__FUNCTION__);
-            return -1;
-        }
-        printf("%s: Found \"RTBuddyImage4: Invalid epoch.\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-        addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
-        if(!xref_stuff) {
-            printf("%s: Could not find \"RTBuddyImage4: Invalid epoch.\" xref\n",__FUNCTION__);
-            return -1;
-        }
-        printf("%s: Found \"RTBuddyImage4: Invalid epoch.\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-        addr_t bl = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_bl_64);
-        if(!bl) {
-            printf("%s: Could not find \"RTBuddyImage4: Invalid epoch.\" last bl insn\n",__FUNCTION__);
-            return -1;
-        }
-        printf("%s: Found \"RTBuddyImage4: Invalid epoch.\" last bl insn at %p\n", __FUNCTION__,(void*)(bl));
-        bl = (addr_t)GET_OFFSET(kernel_len, bl);
-        printf("%s: Found \"Img4DecodeEvaluateTrust failed\" patch loc at %p\n",__FUNCTION__,(void*)(bl));
-        printf("%s: Patching \"Img4DecodeEvaluateTrust failed\" at %p\n", __FUNCTION__,(void*)(bl));
-        // 0xD503201F is nop
-        *(uint32_t *) (kernel_buf + bl) = 0x52800000; // mov w0, 0x0
-        bl = bl - 0x18;
-        printf("%s: Patching \"RTBuddyImage4: Expected tag: , received tag: \" at %p\n", __FUNCTION__,(void*)(bl));
-        *(uint32_t *) (kernel_buf + bl) = 0xd503201f; // nop to avoid jump
-    }
-    return 0;
-}
-
-// load firmware which are not signed like AOP.img4, Homer.img4, etc. ios 12
 int get_image4_context_validate_patch_ios12(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     {
@@ -1072,6 +989,60 @@ int get_vm_fault_enter_patch_ios7(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 9.3.2 arm64
+int get_CP_major_vers_not_set_in_mount_patch_932(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search 08e34b79
+    uint8_t search[] = { 0x08, 0xe3, 0x4b, 0x79 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"CP: major vers not set in mount!\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"CP: major vers not set in mount!\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"CP: major vers not set in mount!\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"CP: major vers not set in mount!\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x52800028; // mov w8, 0x1
+    return 0;
+}
+
+// iOS 9.0 arm64
+int get_CP_major_vers_not_set_in_mount_patch_90(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search 68e14b79
+    uint8_t search[] = { 0x68, 0xe1, 0x4b, 0x79 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"CP: major vers not set in mount!\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"CP: major vers not set in mount!\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"CP: major vers not set in mount!\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"CP: major vers not set in mount!\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x52800028; // mov w8, 0x1
+    return 0;
+}
+
+// iOS 9 arm64
+int get_hfs_cp_no_running_mount_point_version_patch_9(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search a8e24b79
+    uint8_t search[] = { 0xa8, 0xe2, 0x4b, 0x79 };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"hfs cp: no running mount point version!\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"hfs cp: no running mount point version!\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Found \"hfs cp: no running mount point version!\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    printf("%s: Patching \"hfs cp: no running mount point version!\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x52800028; // mov w8, 0x1
+    return 0;
+}
+
 // iOS 8 arm64
 int get_tfp0_patch_ios8(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
@@ -1817,6 +1788,48 @@ int get_amfi_out_of_my_way_patch_ios11(void* kernel_buf,size_t kernel_len) {
     return 0;
 }
 
+// iOS 8 arm64
+int get__MKBDeviceUnlockedSinceBoot_patch_ios8(void* kernel_buf,size_t kernel_len, addr_t mkb) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search fd7bbfa9fd030091ff4300d100008052
+    uint8_t search[] = { 0xfd, 0x7b, 0xbf, 0xa9, 0xfd, 0x03, 0x00, 0x91, 0xff, 0x43, 0x00, 0xd1, 0x00, 0x00, 0x80, 0x52 };
+    void* ent_loc = memmem(kernel_buf+mkb, kernel_len-mkb, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"_MKBDeviceUnlockedSinceBoot\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"_MKBDeviceUnlockedSinceBoot\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Patching \"_MKBDeviceUnlockedSinceBoot\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x52800020; // mov w0, 0x1
+    xref_stuff = xref_stuff + 0x4;
+    printf("%s: Patching \"_MKBDeviceUnlockedSinceBoot\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD65F03C0; // ret
+    xref_stuff = xref_stuff + 0x4;
+    return 0;
+}
+
+// iOS 8 arm64
+int get__MKBGetDeviceLockState_patch_ios8(void* kernel_buf,size_t kernel_len, addr_t mkb) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // search f44fbea9fd7b01a9fd430091ff4300d1ff0f00b9
+    uint8_t search[] = { 0xf4, 0x4f, 0xbe, 0xa9, 0xfd, 0x7b, 0x01, 0xa9, 0xfd, 0x43, 0x00, 0x91, 0xff, 0x43, 0x00, 0xd1, 0xff, 0x0f, 0x00, 0xb9 };
+    void* ent_loc = memmem(kernel_buf+mkb, kernel_len-mkb, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"_MKBGetDeviceLockState\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"_MKBGetDeviceLockState\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
+    printf("%s: Patching \"_MKBGetDeviceLockState\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0x52800060; // mov w0, 0x3
+    xref_stuff = xref_stuff + 0x4;
+    printf("%s: Patching \"_MKBGetDeviceLockState\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    *(uint32_t *) (kernel_buf + xref_stuff) = 0xD65F03C0; // ret
+    xref_stuff = xref_stuff + 0x4;
+    return 0;
+}
+
 int main(int argc, char **argv) {
     
     printf("%s: Starting...\n", __FUNCTION__);
@@ -1829,7 +1842,9 @@ int main(int argc, char **argv) {
         printf("\t-e\t\tPatch vm_map_enter (iOS 7, 8, 9, 10& 11 Only)\n");
         printf("\t-l\t\tPatch vm_map_protect (iOS 7, 8, 9, 10& 11 Only)\n");
         printf("\t-f\t\tPatch vm_fault_enter (iOS 7, 8, 9, 10& 11 Only)\n");
+        printf("\t-i\t\tPatch vm_fault_enter (iOS 8.4 Only)\n");
         printf("\t-s\t\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
+        printf("\t-y\t\tPatch CP: major vers not set in mount! (iOS 9 Only)\n");
         printf("\t-a\t\tPatch map_IO (iOS 8, 9, 10& 11 Only)\n");
         printf("\t-t\t\tPatch tfp0 (iOS 8, 9& 10 Only)\n");
         printf("\t-p\t\tPatch sandbox_trace (iOS 8& 9 Only)\n");
@@ -1842,6 +1857,7 @@ int main(int argc, char **argv) {
         printf("\t-q\t\tPatch image4_context_validate failed (iOS 10 Only)\n");
         printf("\t-b\t\tPatch image4_context_validate failed (iOS 11.1 Only)\n");
         printf("\t-r\t\tPatch image4_context_validate failed (iOS 12 Only)\n");
+        printf("\t-z\t\tPatch _MKBDeviceUnlockedSinceBoot and _MKBGetDeviceLockState (iOS 8 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
 
@@ -1886,6 +1902,18 @@ int main(int argc, char **argv) {
     init_kernel(0, filename);
     
     for(int i=0;i<argc;i++) {
+        if(strcmp(argv[i], "-z") == 0) {
+            uint8_t search[] = { 0xff, 0x43, 0x00, 0xd1, 0x1f, 0x00, 0x00, 0x71, 0x8a, 0x02, 0x00, 0x54, 0x08, 0x00, 0xbc, 0x52, 0xe8, 0x5d, 0x80, 0x72, 0x1f, 0x00, 0x08, 0x6b, 0x6c, 0x02, 0x00, 0x54, 0xe8, 0x7b, 0x1f, 0x32, 0x09, 0x00, 0xbc, 0x52, 0x29, 0x5c, 0x80, 0x72, 0x1f, 0x00, 0x09, 0x6b, 0x8c, 0x02, 0x00, 0x54, 0x09, 0x00, 0xbc, 0x52, 0x29, 0x58, 0x80, 0x72, 0x1f, 0x00, 0x09, 0x6b, 0x20, 0x04, 0x00, 0x54, 0x08, 0x00, 0xbc, 0x52, 0x28, 0x59, 0x80, 0x72, 0x1f, 0x00, 0x08, 0x6b, 0x21, 0x02, 0x00, 0x54, 0xe8, 0x7b, 0x1c, 0x32, 0x1b, 0x00, 0x00, 0x14, 0x80, 0x02, 0x00, 0x35, 0x08, 0x00, 0x80, 0x52, 0x18, 0x00, 0x00, 0x14, 0x08, 0x00, 0xbc, 0x52, 0x08, 0x5e, 0x80, 0x72, 0x1f, 0x00, 0x08, 0x6b, 0xc1, 0x01, 0x00, 0x54, 0xe8, 0x73, 0x1d, 0x32, 0x12, 0x00, 0x00, 0x14, 0x09, 0x00, 0xbc, 0x52, 0x49, 0x5c, 0x80, 0x72, 0x1f, 0x00, 0x09, 0x6b, 0xc0, 0x01, 0x00, 0x54, 0x07, 0x00, 0x00, 0x14, 0x08, 0x00, 0xbc, 0x52, 0xc8, 0x59, 0x80, 0x72, 0x1f, 0x00, 0x08, 0x6b, 0x61, 0x00, 0x00, 0x54, 0xe8, 0x7b, 0x1e, 0x32, 0x07, 0x00, 0x00, 0x14, 0xe0, 0x03, 0x00, 0xf9 };
+            void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+            if (!ent_loc) {
+                printf("%s: Could not find \"MobileKeyBag\" patch\n",__FUNCTION__);
+                return -1;
+            }
+            printf("Kernel: Adding _MKBGetDeviceLockState patch...\n");
+            get__MKBGetDeviceLockState_patch_ios8(kernel_buf,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
+            printf("Kernel: Adding _MKBDeviceUnlockedSinceBoot patch...\n");
+            get__MKBDeviceUnlockedSinceBoot_patch_ios8(kernel_buf,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
+        }
         if(strcmp(argv[i], "-e") == 0) {
             printf("Kernel: Adding vm_map_enter patch...\n");
             get_vm_map_enter_patch_ios7(kernel_buf,kernel_len);
@@ -1905,11 +1933,14 @@ int main(int argc, char **argv) {
             printf("Kernel: Adding vm_fault_enter patch...\n");
             get_vm_fault_enter_patch_ios7(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios8(kernel_buf,kernel_len);
-            get_vm_fault_enter_patch_ios84(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios9(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios10(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios11(kernel_buf,kernel_len);
             get_vm_fault_enter_patch_ios12(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-i") == 0) {
+            printf("Kernel: Adding vm_fault_enter patch...\n");
+            get_vm_fault_enter_patch_ios84(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-m") == 0) {
             printf("Kernel: Adding mount_common patch...\n");
@@ -1917,6 +1948,12 @@ int main(int argc, char **argv) {
             get_mount_common_patch_ios8(kernel_buf,kernel_len);
             get_mount_common_patch_ios9(kernel_buf,kernel_len);
             get_mount_common_patch_ios10(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-y") == 0) {
+            printf("Kernel: Adding CP: major vers not set in mount! patch...\n");
+            get_CP_major_vers_not_set_in_mount_patch_90(kernel_buf,kernel_len);
+            get_CP_major_vers_not_set_in_mount_patch_932(kernel_buf,kernel_len);
+            get_hfs_cp_no_running_mount_point_version_patch_9(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-s") == 0) {
             printf("Kernel: Adding PE_i_can_has_debugger patch...\n");
