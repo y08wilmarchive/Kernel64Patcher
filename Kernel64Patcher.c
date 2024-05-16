@@ -29,22 +29,26 @@
 #define _MOVZW(r, i, s) (0x52800000 | (((s) & 0x30) << 17) | (((i) & 0xFFFF) << 5) | ((r) & 0x1F))
 #define _NOP() 0xD503201F
 
-// load firmware which are not signed like AOP.img4, Homer.img4, etc. ios 11
+// load firmware which are not signed like AOP.img4, Homer.img4, etc. ios 11.0-11.2.6
 int get_image4_context_validate_patch_ios11(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
-    char first_string[45] = "Image4: Encrypted payloads are not supported";
-    void* found = memmem(kernel_buf,kernel_len,first_string,44);
-    if(!found) {
-        printf("%s: Could not find \"Image4: Encrypted payloads are not supported, OMITING PATCHING...\" string\n",__FUNCTION__);
+    // e8234c3988000034
+    uint8_t search[] = { 0xe8, 0x23, 0x4c, 0x39, 0x88, 0x00, 0x00, 0x34 };
+    void* found = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!found) {
+        printf("%s: Could not find \"Image4: Encrypted payloads are not supported\" patch\n",__FUNCTION__);
         return -1;
     }
-    printf("%s: Found \"Image4: Encrypted payloads are not supported\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
-    addr_t found_ref = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, found));
+    printf("%s: Found \"Image4: Encrypted payloads are not supported\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
+    addr_t found_ref = (addr_t)GET_OFFSET(kernel_len, found);
     if(!found_ref) {
-        printf("%s: Could not find \"xref of Image4: Encrypted payloads are not supported\" xref\n",__FUNCTION__);
+        printf("%s: Could not find \"Image4: Encrypted payloads are not supported\" xref\n",__FUNCTION__);
         return -1;
     }
     printf("%s: Found \"Image4: Encrypted payloads are not supported\" xref at %p\n",__FUNCTION__,(void*)found);
+    found_ref = found_ref + 0x4;
+    found_ref = found_ref + 0x4;
+    found_ref = found_ref + 0x4;
     printf("%s: Patching \"patching  Img4DecodePerformTrustEvaluatation failed branch \" at %p\n", __FUNCTION__,(void*)(found_ref - 0xd8));
     *(uint32_t *) (kernel_buf + found_ref - 0xd8) = 0xd503201f; // nop to avoid jump
     printf("%s: Patching \"patching Image4: Invalid board id branch \" at %p\n", __FUNCTION__,(void*)(found_ref - 0xc8));
@@ -63,6 +67,44 @@ int get_image4_context_validate_patch_ios11(void* kernel_buf,size_t kernel_len) 
     *(uint32_t *) (kernel_buf + found_ref - 0xb8) = 0xd503201f; // nop to avoid jump
     printf("%s: Patching \"patching 'Payload hash check failed' branch \" at %p\n", __FUNCTION__,(void*)(found_ref - 0x40));
     *(uint32_t *) (kernel_buf + found_ref - 0x40) = 0xd503201f; // nop to avoid jump
+    return 0;
+}
+
+// load firmware which are not signed like AOP.img4, Homer.img4, etc. ios 13
+int get_image4_context_validate_patch_ios13(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    char first_string[45] = "Image4: Encrypted payloads are not supported";
+    void* found = memmem(kernel_buf,kernel_len,first_string,44);
+    if(!found) {
+        printf("%s: Could not find \"Image4: Encrypted payloads are not supported\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"Image4: Encrypted payloads are not supported\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
+    addr_t found_ref = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, found));
+    if(!found_ref) {
+        printf("%s: Could not find \"xref of Image4: Encrypted payloads are not supported\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"Image4: Encrypted payloads are not supported\" xref at %p\n",__FUNCTION__,(void*)found);
+    printf("%s: Patching \"Image4: Encrypted payloads are not supported\" at %p\n\n", __FUNCTION__,(void*)(found_ref + 0x50));
+    *(uint32_t *) (kernel_buf + found_ref + 0x50) = 0xd503201f;
+    printf("%s: Patching \"Image4: Encrypted payloads are not supported\" at %p\n\n", __FUNCTION__,(void*)(found_ref - 0x50));
+    *(uint32_t *) (kernel_buf + found_ref - 0x50) = 0xd503201f;
+   char second_string[34] = "Image4: Payload hash check failed";
+    void* second_found = memmem(kernel_buf,kernel_len,second_string,33);
+    if(!second_found) {
+        printf("%s: Could not find \"Image4: Payload hash check failed\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"Image4: Payload hash check failed\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,second_found));
+    addr_t second_found_ref = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, second_found));
+    if(!second_found_ref) {
+        printf("%s: Could not find \"xref of Image4: Payload hash check failed\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"Image4: Payload hash check failed\" xref at %p\n",__FUNCTION__,(void*)second_found_ref);
+    printf("%s: Patching \"Image4: Payload hash check failed\" at %p\n\n", __FUNCTION__,(void*)(second_found_ref - 0x08));
+    *(uint32_t *) (kernel_buf + second_found_ref - 0x08) = 0x17ffff96;
     return 0;
 }
 
@@ -1158,6 +1200,30 @@ addr_t get_sb_evaluate_10(void* kernel_buf,size_t kernel_len) {
     return beg_func;
 }
 
+addr_t get_sb_evaluate_7(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    char* str = "no sks endpoint to send to";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
+    if(!ent_loc) {
+        printf("%s: Could not find \"rootless_entitlement\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"rootless_entitlement\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
+    if(!xref_stuff) {
+        printf("%s: Could not find \"rootless_entitlement\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"rootless_entitlement\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
+    if(!beg_func) {
+        printf("%s: Could not find \"rootless_entitlement\" funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"rootless_entitlement\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    return beg_func;
+}
+
 int64_t get_vn_getpath(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     // %s: vn_getpath returned 0x%x\n and find last bl
@@ -1243,6 +1309,32 @@ addr_t get_sb_evaluate_offset_10(void* kernel_buf,size_t kernel_len) {
     return beg_func;
 }
 
+addr_t get_sb_evaluate_offset_7(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // rootless_entitlement
+    // %s[%d] Container: %s (sandbox)\n
+    char* str = "no sks endpoint to send to";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str));
+    if(!ent_loc) {
+        printf("%s: Could not find \"rootless_entitlement\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"rootless_entitlement\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
+    if(!xref_stuff) {
+       printf("%s: Could not find \"sb_evaluate_offset\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sb_evaluate_offset\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t beg_func = bof64(kernel_buf,0,xref_stuff);
+    if(!beg_func) {
+       printf("%s: Could not find \"sb_evaluate_offset\" funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sb_evaluate_offset\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    return beg_func;
+}
+
 // iOS 9 arm64
 int get_virtual_bool_AppleSEPManager_start_patch_ios9(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
@@ -1303,6 +1395,128 @@ int get_sks_request_timeout_patch_ios7(void* kernel_buf,size_t kernel_len) {
     printf("%s: Patching \"sks request timeout\" at %p\n", __FUNCTION__,(void*)(beg_func));
     *(uint32_t *) (kernel_buf + beg_func) = 0xD65F03C0; // ret
     beg_func = beg_func + 0x4;
+    return 0;
+}
+
+// iOS 7 arm64
+int get_sandbox_patch_ios7(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // Extracted from Taig 8.4 jailbreak (thanks @in7egral)
+    // this is a modified taig sandbox payload that replaces the first instruction in the sandbox evaluate function in the kernel with a branch instruction that jumps to a function we create. this function we create should force it to bypass sandbox by returning 0x1800000000.
+    uint8_t payload[0x190] = {
+        0xFD, 0x7B, 0xBF, 0xA9, 0xFD, 0x03, 0x00, 0x91, 0xF4, 0x4F, 0xBF, 0xA9, 0xF6, 0x57, 0xBF, 0xA9,
+        0xFF, 0x43, 0x10, 0xD1, 0xF3, 0x03, 0x00, 0xAA, 0xF4, 0x03, 0x01, 0xAA, 0xF5, 0x03, 0x02, 0xAA,
+        0xF6, 0x03, 0x03, 0xAA, 0xC0, 0x26, 0x40, 0xF9, 0x00, 0x03, 0x80, 0xd2, 0x00, 0x7c, 0x60, 0xd3,
+        0xff, 0x43, 0x10, 0x91, 0xf6, 0x57, 0xc1, 0xa8, 0xf4, 0x4f, 0xc1, 0xa8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0xc0, 0x03, 0x5f, 0xd6
+    };
+    // int64_t sub_ffffff80050f9b20(void* arg1, int64_t* arg2, int32_t arg3, void* arg4)
+    // stp x29, x30, [sp, #-0x10]!
+    // mov x29, sp
+    // stp x20, x19, [sp, #-0x10]!
+    // stp x22, x21, [sp, #-0x10]!
+    // sub sp, sp, #0x410
+    // mov x19, x0
+    // mov x20, x1
+    // mov x21, x2
+    // mov x22, x3
+    // ldr x0, [x22, #0x48]
+    // mov x0, #0x18
+    // lsl x0, x0, #0x20
+    // add sp, sp, #0x410
+    // ldp x22, x21, [sp], #0x10
+    // ldp x20, x19, [sp], #0x10
+    // ldp x29, x30, [sp], #0x10
+    // ret -> return 0x1800000000
+    // int64_t sub_ffffff8002ccd238(char* arg1, char* arg2)
+    // ldrb w4, [x0]
+    // ldrb w5, [x1]
+    // cbz w5, 0xffffff8002ccd264
+    // cmp w4, w5
+    // b.ne 0xffffff8002ccd25c
+    // cbz w4, 0xffffff8002ccd264
+    // add x0, x0, #0x1
+    // add x1, x1, #0x1
+    // b 0xffffff8002ccd238
+    // mov w0, #0x1
+    // ret
+    // mov w0, #0
+    // ret
+    uint32_t sb_evaluate = get_sb_evaluate_7(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+    uint32_t vn_getpath = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+    uint32_t sb_evaluate_offset = get_sb_evaluate_offset_7(kernel_buf, kernel_len); // xref& bof64
+    uint32_t *payloadAsUint32 = (uint32_t *)payload;
+    uint32_t patchValue;
+    char* str = "\"sks request timeout\"";
+    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
+    if(!ent_loc) {
+        printf("%s: Could not find \"sks request timeout\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sks request timeout\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
+    if(!xref_stuff) {
+        printf("%s: Could not find \"sks request timeout\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sks request timeout\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
+    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
+    if(!beg_func) {
+        printf("%s: Could not find \"sks request timeout\" funcbegin insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"sks request timeout\" funcbegin insn at %p\n", __FUNCTION__,(void*)(beg_func));
+    beg_func = (addr_t)GET_OFFSET(kernel_len, beg_func); // offset that we use for patching the kernel
+    printf("%s: Patching \"sks request timeout\" at %p\n", __FUNCTION__,(void*)(beg_func));
+    *(uint32_t *) (kernel_buf + beg_func) = 0x52800000; // mov w0, 0x0
+    beg_func = beg_func + 0x4;
+    printf("%s: Patching \"sks request timeout\" at %p\n", __FUNCTION__,(void*)(beg_func));
+    *(uint32_t *) (kernel_buf + beg_func) = 0xD65F03C0; // ret
+    beg_func = beg_func + 0x4;
+    uint64_t sb_evaluate_hook_offset = beg_func;
+    beg_func = (addr_t)GET_OFFSET2(kernel_len, (uintptr_t)beg_func); // kernel offset which we need in order to create bl or b calls
+    uint32_t sb_evaluate_hook = beg_func;
+    uint64_t offset = beg_func;
+    for ( uint32_t i = 0; i < 0x190; ++i )
+    {
+        uint32_t dataOffset = payloadAsUint32[i];
+        if (dataOffset == 0xCCCCCCCC) { // second to last line of our payload function
+            // ios 9.3.5 a9ba6ffc
+            // ios 9.2 a9ba6ffc
+            // ios 9.0 a9ba6ffc
+            // ios 8.4 a9ba6ffc
+            // ios 8.0 a9ba6ffc
+            patchValue = 0xA9BA6FFC; // first insn in the sb_evaluate function from before we modified it
+            // so basically here we are running the instruction from the sb_evaluate function that we removed from earlier
+            payloadAsUint32[i] = patchValue;
+        } else if (dataOffset == 0xDDDDDDDD) {
+            // b unconditional call to the sb_evaluate function
+            uint64_t origin = offset;
+            uint64_t target = get_sb_evaluate_7(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+            target = target + 0x4; // skip to next line
+            patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x14000000; // 0x14000000 is b
+            payloadAsUint32[i] = patchValue;
+        } else if (dataOffset == 0x11111111) {
+            // bl call to the vn_getpath function
+            uint64_t origin = offset;
+            int64_t target = get_vn_getpath(kernel_buf, kernel_len); // find_literal_ref_64& find_last_insn_matching_64
+            patchValue = ((int64_t)target - (int64_t)origin) >> 2 & 0x3FFFFFF | 0x94000000; // 0x94000000 is bl
+            payloadAsUint32[i] = patchValue;
+        }
+        offset += sizeof(uint32_t);
+    }
+    // insert payload starting at funcbegin insn for the sb_evaluate_hook function
+    offset = sb_evaluate_hook_offset;
+    uint32_t count = sizeof(payload) / sizeof(uint32_t);
+    for(uint32_t i=0; i < count; ++i)
+    {
+        printf("%s: Patching \"sandbox\" at %p\n", __FUNCTION__,(void*)(offset));
+        *(uint32_t *) (kernel_buf + offset) = payloadAsUint32[i];
+        offset += sizeof(uint32_t);
+    }
+    // replace the first line in the sb_evaluate function with a b unconditional call to our payload
+    uint32_t branch_instr = (sb_evaluate_hook - sb_evaluate) >> 2 & 0x3FFFFFF | 0x14000000; // 0x14000000 is b
+    *(uint32_t *) (kernel_buf + sb_evaluate_offset) = branch_instr;
     return 0;
 }
 
@@ -1896,6 +2110,7 @@ int main(int argc, char **argv) {
         printf("\t-a\t\tPatch map_IO (iOS 8, 9, 10& 11 Only)\n");
         printf("\t-t\t\tPatch tfp0 (iOS 8, 9& 10 Only)\n");
         printf("\t-p\t\tPatch sandbox_trace (iOS 8& 9 Only)\n");
+        printf("\t-x\t\tPatch sandbox (iOS 7 Only)\n");
         printf("\t-g\t\tPatch sandbox (iOS 8 Only)\n");
         printf("\t-j\t\tPatch sandbox (iOS 9 Only)\n");
         printf("\t-h\t\tPatch sandbox (iOS 10 Only)\n");
@@ -1903,7 +2118,7 @@ int main(int argc, char **argv) {
         printf("\t-k\t\tPatch sks request timeout (iOS 7 Only)\n");
         printf("\t-u\t\tPatch amfi_get_out_of_my_way (iOS 11, 12, 13& 14 Only)\n");
         printf("\t-q\t\tPatch image4_context_validate failed (iOS 10 Only)\n");
-        printf("\t-b\t\tPatch image4_context_validate failed (iOS 11.1 Only)\n");
+        printf("\t-b\t\tPatch image4_context_validate failed (iOS 11.0-11.2.6 Only)\n");
         printf("\t-r\t\tPatch image4_context_validate failed (iOS 12 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
@@ -2013,6 +2228,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-p") == 0) {
             printf("Kernel: Adding sandbox_trace patch...\n");
             get_sandbox_trace_patch_ios8(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-x") == 0) {
+            printf("Kernel: Adding sandbox patch...\n");
+            get_sandbox_patch_ios7(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-g") == 0) {
             printf("Kernel: Adding sandbox patch...\n");
