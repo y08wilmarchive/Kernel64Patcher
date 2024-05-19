@@ -194,6 +194,7 @@ int get_image4_context_validate_patch_ios10(void* kernel_buf,size_t kernel_len) 
 int get_image4_context_validate_patch_ios12(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
     {
+        // e0c30091e10313aae30314aa
         uint8_t search[] = { 0xe0, 0xc3, 0x00, 0x91, 0xe1, 0x03, 0x13, 0xaa, 0xe3, 0x03, 0x14, 0xaa };
         void* found = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
         if (!found) {
@@ -211,6 +212,7 @@ int get_image4_context_validate_patch_ios12(void* kernel_buf,size_t kernel_len) 
         *(uint32_t *) (kernel_buf + found_ref + 0x30) = 0xd503201f; // nop to avoid jump
     }
     {
+        // 622e40f9e00314aae10315aa
         uint8_t search[] = { 0x62, 0x2e, 0x40, 0xf9, 0xe0, 0x03, 0x14, 0xaa, 0xe1, 0x03, 0x15, 0xaa };
         void* found = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
         if (!found) {
@@ -245,6 +247,7 @@ int get_image4_context_validate_patch_ios12(void* kernel_buf,size_t kernel_len) 
         *(uint32_t *) (kernel_buf + found_ref - 0x218) = 0x52800009; // mov w9, 0x0
     }
     {
+        // 68a240b9691240b9
         uint8_t search[] = { 0x68, 0xa2, 0x40, 0xb9, 0x69, 0x12, 0x40, 0xb9 };
         void* found = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
         if (!found) {
@@ -911,53 +914,26 @@ int get_vm_fault_enter_patch_ios10(void* kernel_buf,size_t kernel_len) {
 // iOS 11 arm64
 int get_vm_fault_enter_patch_ios11(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
-    // search
-    // ac1740b91f010e72
-    // ldr w12, [x29, #0x14]
-    // tst w8, #0x40000
-    // 
-    // ldr w12, [x29, #0x14]
-    // tst w8, #0x40000
-    // cset w10, eq
-    // and w10, w10, w28, lsr #0x2
-    // tst w24, #0x4
-    // cset w11, eq
-    // and w13, w28, #0xfffffffb -> mov w12, 0x1
-    // tst w11, w10
-    // str w13, [sp, #0x100] -> mov w10, 0x1
-    // csel w10, w13, w28, ne
-    // str w10, [sp, #0x11c]
-    // stp x25, x20, [sp, #0x108]
-    // str w12, [sp, #0x104]
-    // cbz w12, 0xfffffff0071867c0
-    // mov w28, #0
-    // mov w27, #0
-    // b 0xfffffff007186e74
-    // tbnz w8, #0x13, 0xfffffff0071867e8
-    // 
-    // should work on ios 11.1-11.4.1
-    uint8_t search[] = { 0xac, 0x17, 0x40, 0xb9, 0x1f, 0x01, 0x0e, 0x72 };
+    // 0b0118126a010a2a
+    uint8_t search[] = { 0x0b, 0x01, 0x18, 0x12, 0x6a, 0x01, 0x0a, 0x2a };
     void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
     if (!ent_loc) {
         printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
         return -1;
     }
     printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = (addr_t)GET_OFFSET(kernel_len, ent_loc);
-    printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,(void*)(xref_stuff));
-    xref_stuff = xref_stuff + 0x4; // move to tst w8, #0x40000
-    xref_stuff = xref_stuff + 0x4; // move to cset w10, eq
-    xref_stuff = xref_stuff + 0x4; // move to and w10, w10, w28, lsr #0x2
-    xref_stuff = xref_stuff + 0x4; // move to tst w24, #0x4
-    xref_stuff = xref_stuff + 0x4; // move to cset w11, eq
-    xref_stuff = xref_stuff + 0x4; // move to and w13, w28, #0xfffffffb
-    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002c; // mov w12, 0x1
-    xref_stuff = xref_stuff + 0x4; // move to tst w11, w10
-    xref_stuff = xref_stuff + 0x4; // move to str w13, [sp, #0x100]
-    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(xref_stuff));
-    *(uint32_t *) (kernel_buf + xref_stuff) = 0x5280002a; // mov w10, 0x1
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(ent_loc));
+    addr_t cbz = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_cbz_64);
+    if(!cbz) {
+        printf("%s: Could not find \"vm_fault_enter\" last cbz insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" last cbz insn at %p\n", __FUNCTION__,(void*)(cbz));
+    cbz = (addr_t)GET_OFFSET(kernel_len, cbz);
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,(void*)(cbz));
+    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(cbz));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + cbz) = 0xD503201F; // nop
     return 0;
 }
 
