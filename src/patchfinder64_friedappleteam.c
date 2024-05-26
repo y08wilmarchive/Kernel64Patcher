@@ -7,6 +7,12 @@
 //  Some parts of code from Luca Todesco and Pangu
 //  Copyright © 2016 -2017 FriedApple Team. All rights reserved.
 //
+
+#if defined(__linux__) || defined(__gnu_linux__)
+    #define _GNU_SOURCE
+#endif
+
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,7 +64,6 @@ __unused static uint64_t real_signextend_64(uint64_t imm, uint8_t bit)
 
 __unused static uint64_t signextend_64(uint64_t imm, uint8_t bit)
 {
-    assert(bit > 0);
     return real_signextend_64(imm, bit - 1);
     /*
      if ((imm >> bit) & 1)

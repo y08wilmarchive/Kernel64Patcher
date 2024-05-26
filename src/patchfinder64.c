@@ -6,6 +6,10 @@
 //  Copyright © 2017 xerub. All rights reserved.
 //
 
+#if defined(__linux__) || defined(__gnu_linux__)
+    #define _GNU_SOURCE
+#endif
+
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
@@ -225,7 +229,7 @@ step64_back(const uint8_t *buf, addr_t start, size_t length, uint32_t what, uint
 }
 
 static addr_t
-bof64(const uint8_t *buf, addr_t start, addr_t where)
+bof64_patchfinder64(const uint8_t *buf, addr_t start, addr_t where)
 {
     for (; where >= start; where -= 4) {
         uint32_t op = *(uint32_t *)(buf + where);
@@ -718,12 +722,12 @@ find_register_value(addr_t where, int reg)
     addr_t bof = 0;
     where -= kerndumpbase;
     if (where > xnucore_base) {
-        bof = bof64(kernel, xnucore_base, where);
+        bof = bof64_patchfinder64(kernel, xnucore_base, where);
         if (!bof) {
             bof = xnucore_base;
         }
     } else if (where > prelink_base) {
-        bof = bof64(kernel, prelink_base, where);
+        bof = bof64_patchfinder64(kernel, prelink_base, where);
         if (!bof) {
             bof = prelink_base;
         }
@@ -834,7 +838,7 @@ find_ptov_table(void)
         return 0;
     }
     ref -= kerndumpbase;
-    bof = bof64(kernel, xnucore_base, ref);
+    bof = bof64_patchfinder64(kernel, xnucore_base, ref);
     if (!bof) {
         return 0;
     }
@@ -858,7 +862,7 @@ find_kernel_pmap(void)
     if (!call) {
         return 0;
     }
-    bof = bof64(kernel, xnucore_base, call);
+    bof = bof64_patchfinder64(kernel, xnucore_base, call);
     if (!bof) {
         return 0;
     }
@@ -1152,7 +1156,7 @@ find_amficache(void)
     if (!func) {
         return 0;
     }
-    bof = bof64(kernel, func - 256, func);
+    bof = bof64_patchfinder64(kernel, func - 256, func);
     if (!bof) {
         return 0;
     }
@@ -1237,7 +1241,7 @@ find_vfs_context_current(void)
         return 0;
     }
     ref -= kerndumpbase;
-    bof = bof64(kernel, xnucore_base, ref);
+    bof = bof64_patchfinder64(kernel, xnucore_base, ref);
     if (!bof) {
         return 0;
     }
@@ -1337,7 +1341,7 @@ find_zone_map_ref(void)
         return 0;
     }
     ref -= kerndumpbase;
-    bof = bof64(kernel, xnucore_base, ref);
+    bof = bof64_patchfinder64(kernel, xnucore_base, ref);
     if (!bof) {
         return 0;
     }
@@ -1397,7 +1401,7 @@ find_trust_cache_ppl(void)
         return 0;
     }
     str -= kerndumpbase;
-    bof = bof64(kernel, pplcode_base, str);
+    bof = bof64_patchfinder64(kernel, pplcode_base, str);
     if (!bof) {
         return 0;
     }
@@ -1466,7 +1470,7 @@ find_call5(void)
     if (!str) {
         return 0;
     }
-    bof = bof64(kernel, prelink_base, str - kernel);
+    bof = bof64_patchfinder64(kernel, prelink_base, str - kernel);
     if (!bof) {
         return 0;
     }

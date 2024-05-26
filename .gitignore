@@ -1,4 +1,12 @@
-kcache.raw
-kcache.patched
-Kernel64Patcher
-maloader-no-sysctl
+boot
+kcache.pwn
+research
+ipsw
+.DS_Store
+out.dmg
+1214
+113
+seprmvr64/seprmvr64
+obj
+seprmvr64
+.vscode
