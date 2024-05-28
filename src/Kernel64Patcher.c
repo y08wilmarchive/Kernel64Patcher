@@ -2035,35 +2035,6 @@ int get__MKBGetDeviceLockState_patch_ios9(void* kernel_buf,size_t kernel_len, ad
     return 0;
 }
 
-int findandpatch(void* kbuf, size_t klen, void* str) {
-    printf("%s: Entering ...\n",__FUNCTION__);
-    void* ent_loc = memmem(kbuf, klen, str, sizeof(str) - 1);
-    if(!ent_loc) {
-        printf("%s: Could not find \"%s\" string\n",__FUNCTION__, str);
-        return -1;
-    }
-    printf("%s: Found \"%s\" str loc at %p\n",__FUNCTION__,str,GET_OFFSET3(klen,ent_loc));
-    addr_t xref_stuff = xref64(kbuf,0,klen,(addr_t)GET_OFFSET3(klen, ent_loc));
-    if(!xref_stuff) {
-       printf("%s: Could not find \"%s\" xref\n",__FUNCTION__, str);
-        return -1;
-    }
-    printf("%s: Found \"%s\" xref at %p\n", __FUNCTION__,str,(void*)(xref_stuff));
-    addr_t beg_func = bof64_patchfinder64(kbuf,0,xref_stuff);
-    if(!beg_func) {
-       printf("%s: Could not find \"%s\" funcbegin insn\n",__FUNCTION__, str);
-        return -1;
-    }
-    printf("%s: Found \"%s\" funcbegin insn at %p\n", __FUNCTION__,str,(void*)(beg_func));
-    printf("%s: Patching \"%s\" at %p\n", __FUNCTION__,str,(void*)(xref_stuff));
-    *(uint32_t *) (kbuf + xref_stuff) = 0x52800000; // mov w0, 0x0
-    xref_stuff = xref_stuff + 0x4;
-    printf("%s: Patching \"%s\" at %p\n", __FUNCTION__,str,(void*)(xref_stuff));
-    *(uint32_t *) (kbuf + xref_stuff) = 0xD65F03C0; // ret
-    xref_stuff = xref_stuff + 0x4;
-    return 0;
-}
-
 extern int seprmvr64(int argc, char *argv[], char* ver);
 
 int main(int argc, char **argv) {    
@@ -2114,7 +2085,7 @@ int main(int argc, char **argv) {
         printf("\t-q\t\tPatch image4_context_validate failed (iOS 10 Only)\n");
         printf("\t-b\t\tPatch image4_context_validate failed (iOS 11.0-11.2.6 Only)\n");
         printf("\t-r\t\tPatch image4_context_validate failed (iOS 11.3-12.1.2 Only)\n");
-        printf("\t-u\t\tPatch seprmvr64 (iOS 7, 8, 9, 10, 11& 12 Only)\n");
+        printf("\t-u\t\tPatch seprmvr64 (iOS 10, 11& 12 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
 
@@ -2157,103 +2128,6 @@ int main(int argc, char **argv) {
     init_kernel(0, filename);
     
     for(int i=0;i<argc;i++) {
-        if(strcmp(argv[i], "-u") == 0) {
-            if(strcmp(argv[i+1], "7") == 0) {
-                void* strings[] = {
-                    "\x1b[35m ***** SEP Panicked! dumping log. *****\x1b[0m",
-                    //"\"sks request timeout\"",
-                    "AppleKeyStore: operation failed (pid: %d sel: %d ret: %x)",
-                    "AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d",
-                    //"AppleSEP:WARNING: EP0 received unsolicited message",
-                    //"/SourceCache/AppleCredentialManager/AppleCredentialManager-30/AppleCredentialManager/AppleCredentialManager.cpp",
-                    "\"SEP/OS failed to boot\"",
-                    //"AppleSEP:WARNING: EP0 received unsolicited message 0x%016llx",
-                    //"failed to notify system keybag updation %d",
-                    //"failed to notify %d",
-                    "\"REQUIRE fail: %s @ %s:%u:%s: \"",
-                    //"AppleKeyStore starting (BUILT: %s %s)",
-                    //"AppleKeyStore:Sending category unlock status with %d",
-                    //"AppleKeyStore:Sending lock change %d"
-                };
-                for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
-                    if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
-                        printf("[-] Failed to patch %s\n", strings[i]);
-                    }
-                }
-            } else if (strcmp(argv[i+1], "8") == 0) {
-                void* strings[] = {
-                    "\x1b[35m ***** SEP Panicked! dumping log. *****\x1b[0m",
-                    //"\"sks request timeout\"",
-                    "AppleKeyStore: operation failed (pid: %d sel: %d ret: %x)",
-                    "AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d",
-                    //"AppleSEP:WARNING: EP0 received unsolicited message",
-                    //"/SourceCache/AppleCredentialManager/AppleCredentialManager-30/AppleCredentialManager/AppleCredentialManager.cpp",
-                    "\"SEP/OS failed to boot\"",
-                    //"AppleSEP:WARNING: EP0 received unsolicited message 0x%016llx",
-                    //"failed to notify system keybag updation %d",
-                    //"failed to notify %d",
-                    "\"REQUIRE fail: %s @ %s:%u:%s: \"",
-                    //"AppleKeyStore starting (BUILT: %s %s)",
-                    //"AppleKeyStore:Sending category unlock status with %d",
-                    //"AppleKeyStore:Sending lock change %d"
-                };
-                for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
-                    if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
-                        printf("[-] Failed to patch %s\n", strings[i]);
-                    }
-                }
-            } else if (strcmp(argv[i+1], "9") == 0) {
-                void* strings[] = {
-                    "\x1b[35m ***** SEP Panicked! dumping log. *****\x1b[0m",
-                    //"\"sks request timeout\"",
-                    "AppleKeyStore: operation failed (pid: %d sel: %d ret: %x)",
-                    "AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d",
-                    //"AppleSEP:WARNING: EP0 received unsolicited message",
-                    //"/SourceCache/AppleCredentialManager/AppleCredentialManager-30/AppleCredentialManager/AppleCredentialManager.cpp",
-                    "\"SEP/OS failed to boot\"",
-                    //"AppleSEP:WARNING: EP0 received unsolicited message 0x%016llx",
-                    //"failed to notify system keybag updation %d",
-                    //"failed to notify %d",
-                    "\"REQUIRE fail: %s @ %s:%u:%s: \"",
-                    //"AppleKeyStore starting (BUILT: %s %s)",
-                    //"AppleKeyStore:Sending category unlock status with %d",
-                    //"AppleKeyStore:Sending lock change %d"
-                };
-                for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
-                    if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
-                        printf("[-] Failed to patch %s\n", strings[i]);
-                    }
-                }
-            } else if (strcmp(argv[i+1], "10") == 0) {
-                void* strings[] = {
-                    "\"SEP Panic\"",
-                    "AppleKeyStore: operation failed (pid: %d sel: %d ret: %x)"
-                };
-                for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
-                    if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
-                        printf("[-] Failed to patch %s\n", strings[i]);
-                    }
-                }
-            } else if (strcmp(argv[i+1], "11") == 0) {
-                void* strings[] = {
-                    "AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)"
-                };
-                for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
-                    if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
-                        printf("[-] Failed to patch %s\n", strings[i]);
-                    }
-                }
-            } else if (strcmp(argv[i+1], "12") == 0) {
-                void* strings[] = {
-                    "AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)"
-                };
-                for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
-                    if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
-                        printf("[-] Failed to patch %s\n", strings[i]);
-                    }
-                }
-            }
-        }
         if(strcmp(argv[i], "-e") == 0) {
             printf("Kernel: Adding vm_map_enter patch...\n");
             if(strcmp(argv[i+1], "7") == 0) {
