@@ -78,7 +78,7 @@ bool patch_sks(struct pf_patch_t *patch, uint32_t *stream) {
 bool patch_smgr(struct pf_patch_t *patch, uint32_t *stream) {
     char *str = pf_follow_xref(kbuf, stream);
 
-    if (strncmp(str, "\"SEP Panic:", 11) == 0) {
+    if (strncmp(str, "\"SEP Panic:", 11) == 0 || strncmp(str, "SEP Panic: %s\n%s", strlen("SEP Panic: %s\n%s")) == 0) {
         uint32_t *begin = bof64(stream);
 
         begin[0] = 0x52800000;
@@ -131,7 +131,7 @@ bool patch_mesa(struct pf_patch_t *patch, uint32_t *stream) {
         (strcmp(str, "ERROR: %s: AssertMacros: %s (value = 0x%lx), %s file: %s, line: %d") == 0)) {
         uint32_t *begin = bof64(stream);
 
-        if (begin[6] == 0xb4000293) {
+        if (begin[6] == 0xb4000293 || begin[4] == 0xb40001a0) {
             printf("[+] Skipping AssertMacros at 0x%lx\n", macho_ptr_to_va(kbuf, begin));
 
             return false;
@@ -162,8 +162,19 @@ bool patch_acm(struct pf_patch_t *patch, uint32_t *stream) {
 
             printf("[+] Patched ACM at 0x%lx\n", macho_ptr_to_va(kbuf, begin));
         }
-    }
+    } else if (strncmp(str, "/Library/Caches/com.apple.xbs/Sources/AppleCredentialManager/AppleCredentialManager-", 84) == 0) {
+        str += 84;
+        while (str[-1] != '/') str++;
+        
+        if (strcmp(str, "AppleCredentialManager/AppleCredentialManager.cpp") == 0) {
+            uint32_t *begin = bof64(stream);
 
+            begin[0] = 0x52800000;
+            begin[1] = ret;
+
+            printf("[+] Patched ACM at 0x%lx\n", macho_ptr_to_va(kbuf, begin));
+        }
+    }
     return false;
 }
 
