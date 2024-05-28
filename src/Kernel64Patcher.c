@@ -2174,7 +2174,7 @@ int main(int argc, char **argv) {
         printf("\t-k\t\tPatch sks request timeout (iOS 7, 8& 9 Only)\n");
         printf("\t-q\t\tPatch image4_context_validate failed (iOS 10 Only)\n");
         printf("\t-b\t\tPatch image4_context_validate failed (iOS 11.0-11.2.6 Only)\n");
-        printf("\t-r\t\tPatch image4_context_validate failed (iOS 11.3-12.1.2 Only)\n");
+        printf("\t-r\t\tPatch image4_context_validate failed (iOS 11.3-13.7 Only)\n");
         printf("\t-u\t\tPatch seprmvr64 (iOS 7, 8, 9, 10, 11& 12 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
