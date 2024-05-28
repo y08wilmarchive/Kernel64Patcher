@@ -243,14 +243,48 @@ int get_image4_context_validate_patch_ios12(void* kernel_buf,size_t kernel_len) 
         *(uint32_t *) (kernel_buf + found_ref - 0xcc) = 0x52800008; // mov w8, 0x0
         printf("%s: Patching \"Image4: Invalid chip id\" at %p\n", __FUNCTION__,(void*)(found_ref - 0xc8));
         *(uint32_t *) (kernel_buf + found_ref - 0xc8) = 0x52800009; // mov w9, 0x0
-        printf("%s: Patching \"Image4: Invalid security mode\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x154));
-        *(uint32_t *) (kernel_buf + found_ref - 0x154) = 0x52800008; // mov w8, 0x0
-        printf("%s: Patching \"Image4: Invalid security mode\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x150));
-        *(uint32_t *) (kernel_buf + found_ref - 0x150) = 0x52800009; // mov w9, 0x0
-        printf("%s: Patching \"Image4: Invalid board id\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x21c));
-        *(uint32_t *) (kernel_buf + found_ref - 0x21c) = 0x52800008; // mov w8, 0x0
-        printf("%s: Patching \"Image4: Invalid board id\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x218));
-        *(uint32_t *) (kernel_buf + found_ref - 0x218) = 0x52800009; // mov w9, 0x0
+    }
+    {
+        // 68a64239691e40b9
+        uint8_t search[] = { 0x68, 0xa6, 0x42, 0x39, 0x69, 0x1e, 0x40, 0xb9 };
+        void* found = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+        if (!found) {
+            printf("%s: Could not find \"Image4: Invalid security mode\" patch\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"Image4: Invalid security mode\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
+        addr_t found_ref = (addr_t)GET_OFFSET(kernel_len, found);
+        if(!found_ref) {
+            printf("%s: Could not find \"Image4: Invalid security mode\" xref\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"Image4: Invalid security mode\" xref at %p\n",__FUNCTION__,(void*)found);
+        found_ref = found_ref + 0x14;
+        printf("%s: Patching \"Image4: Invalid security mode\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x14));
+        *(uint32_t *) (kernel_buf + found_ref - 0x14) = 0x52800008; // mov w8, 0x0
+        printf("%s: Patching \"Image4: Invalid security mode\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x10));
+        *(uint32_t *) (kernel_buf + found_ref - 0x10) = 0x52800009; // mov w9, 0x0
+    }
+    {
+        // 689a40b9690a40b9
+        uint8_t search[] = { 0x68, 0x9a, 0x40, 0xb9, 0x69, 0x0a, 0x40, 0xb9 };
+        void* found = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+        if (!found) {
+            printf("%s: Could not find \"Image4: Invalid board id\" patch\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"Image4: Invalid board id\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
+        addr_t found_ref = (addr_t)GET_OFFSET(kernel_len, found);
+        if(!found_ref) {
+            printf("%s: Could not find \"Image4: Invalid board id\" xref\n",__FUNCTION__);
+            return -1;
+        }
+        printf("%s: Found \"Image4: Invalid board id\" xref at %p\n",__FUNCTION__,(void*)found);
+        found_ref = found_ref + 0x14;
+        printf("%s: Patching \"Image4: Invalid board id\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x14));
+        *(uint32_t *) (kernel_buf + found_ref - 0x14) = 0x52800008; // mov w8, 0x0
+        printf("%s: Patching \"Image4: Invalid board id\" at %p\n", __FUNCTION__,(void*)(found_ref - 0x10));
+        *(uint32_t *) (kernel_buf + found_ref - 0x10) = 0x52800009; // mov w9, 0x0
     }
     {
         // 68a240b9691240b9
@@ -966,6 +1000,44 @@ int get_vm_fault_enter_patch_ios12(void* kernel_buf,size_t kernel_len) {
     }
     printf("%s: Found \"vm_fault_enter\" last b insn at %p\n", __FUNCTION__,(void*)(second_b));
     addr_t tbz = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, second_b, insn_is_tbz);
+    if(!tbz) {
+        printf("%s: Could not find \"vm_fault_enter\" last tbz insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" last tbz insn at %p\n", __FUNCTION__,(void*)(tbz));
+    tbz = (addr_t)GET_OFFSET(kernel_len, tbz);
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,(void*)(tbz));
+    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(tbz));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + tbz) = 0xD503201F; // nop
+    return 0;
+}
+
+// iOS 13 arm64
+int get_vm_fault_enter_patch_ios13(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // 2b0118126a010a2a
+    uint8_t search[] = { 0x2b, 0x01, 0x18, 0x12, 0x6a, 0x01, 0x0a, 0x2a };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(ent_loc));
+    addr_t tbz = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_tbz);
+    if(!tbz) {
+        printf("%s: Could not find \"vm_fault_enter\" last tbz insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" last tbz insn at %p\n", __FUNCTION__,(void*)(tbz));
+    addr_t b = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, tbz, insn_is_b_unconditional_64);
+    if(!b) {
+        printf("%s: Could not find \"vm_fault_enter\" last b insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" last b insn at %p\n", __FUNCTION__,(void*)(b));
+    tbz = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, b, insn_is_tbz);
     if(!tbz) {
         printf("%s: Could not find \"vm_fault_enter\" last tbz insn\n",__FUNCTION__);
         return -1;
@@ -2088,7 +2160,7 @@ int main(int argc, char **argv) {
         printf("\t-m <ios ver>\tPatch mount_common (iOS 7, 8, 9, 10 Only)\n");
         printf("\t-e <ios ver>\tPatch vm_map_enter (iOS 7, 8, 9, 10& 11 Only)\n");
         printf("\t-l <ios ver>\tPatch vm_map_protect (iOS 8, 9, 10& 11 Only)\n");
-        printf("\t-f <ios ver>\tPatch vm_fault_enter (iOS 7, 8, 8.4, 9, 10, 11& 12 Only)\n");
+        printf("\t-f <ios ver>\tPatch vm_fault_enter (iOS 7, 8, 8.4, 9, 10, 11, 12& 13 Only)\n");
         printf("\t-s <ios ver>\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
         printf("\t-y\t\tPatch CP: major vers not set in mount! (iOS 9 Only)\n");
         printf("\t-a\t\tPatch map_IO (iOS 8, 9, 10& 11 Only)\n");
@@ -2285,6 +2357,8 @@ int main(int argc, char **argv) {
                 get_vm_fault_enter_patch_ios11(kernel_buf,kernel_len);
             } else if (strcmp(argv[i+1], "12") == 0) {
                 get_vm_fault_enter_patch_ios12(kernel_buf,kernel_len);
+            } else if (strcmp(argv[i+1], "13") == 0) {
+                get_vm_fault_enter_patch_ios13(kernel_buf,kernel_len);
             }
         }
         if(strcmp(argv[i], "-m") == 0) {
