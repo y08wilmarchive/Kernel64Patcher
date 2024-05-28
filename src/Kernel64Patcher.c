@@ -19,6 +19,7 @@
 
 #define GET_OFFSET(kernel_len, x) (x - (uintptr_t) kernel_buf)
 #define GET_OFFSET2(kernel_len, x) (x + (uintptr_t) kernel_buf)
+#define GET_OFFSET3(klen, x) (x - (uintptr_t) kbuf) // Thanks to @Ralph0045 for this 
 
 #define LSL0 0
 #define LSL16 16
@@ -2034,33 +2035,32 @@ int get__MKBGetDeviceLockState_patch_ios9(void* kernel_buf,size_t kernel_len, ad
     return 0;
 }
 
-int findandpatch(void* kernel_buf,size_t kernel_len, char* str) {
+int findandpatch(void* kbuf, size_t klen, void* str) {
     printf("%s: Entering ...\n",__FUNCTION__);
-    void* ent_loc = memmem(kernel_buf, kernel_len, str, sizeof(str) - 1);
+    void* ent_loc = memmem(kbuf, klen, str, sizeof(str) - 1);
     if(!ent_loc) {
-        printf("%s: Could not find \"%s\" string\n",__FUNCTION__,str);
+        printf("%s: Could not find \"%s\" string\n",__FUNCTION__, str);
         return -1;
     }
-    printf("%s: Found \"%s\" str loc at %p\n",__FUNCTION__,str,GET_OFFSET(kernel_len,ent_loc));
-    addr_t xref_stuff = find_literal_ref_64(0, kernel_buf, kernel_len, (uint32_t*)kernel_buf, GET_OFFSET(kernel_len,ent_loc));
+    printf("%s: Found \"%s\" str loc at %p\n",__FUNCTION__,str,GET_OFFSET3(klen,ent_loc));
+    addr_t xref_stuff = xref64(kbuf,0,klen,(addr_t)GET_OFFSET3(klen, ent_loc));
     if(!xref_stuff) {
-        printf("%s: Could not find \"%s\" xref\n",__FUNCTION__, str);
+       printf("%s: Could not find \"%s\" xref\n",__FUNCTION__, str);
         return -1;
     }
     printf("%s: Found \"%s\" xref at %p\n", __FUNCTION__,str,(void*)(xref_stuff));
-    addr_t beg_func = (addr_t)find_last_insn_matching_64(0, kernel_buf, kernel_len, xref_stuff, insn_is_funcbegin_64);
+    addr_t beg_func = bof64_patchfinder64(kbuf,0,xref_stuff);
     if(!beg_func) {
-        printf("%s: Could not find \"%s\" funcbegin insn\n",__FUNCTION__,str);
+       printf("%s: Could not find \"%s\" funcbegin insn\n",__FUNCTION__, str);
         return -1;
     }
     printf("%s: Found \"%s\" funcbegin insn at %p\n", __FUNCTION__,str,(void*)(beg_func));
-    beg_func = (addr_t)GET_OFFSET(kernel_len, beg_func); // offset that we use for patching the kernel
-    printf("%s: Patching \"%s\" at %p\n", __FUNCTION__,str,(void*)(beg_func));
-    *(uint32_t *) (kernel_buf + beg_func) = 0x52800000; // mov w0, 0x0
-    beg_func = beg_func + 0x4;
-    printf("%s: Patching \"%s\" at %p\n", __FUNCTION__,str,(void*)(beg_func));
-    *(uint32_t *) (kernel_buf + beg_func) = 0xD65F03C0; // ret
-    beg_func = beg_func + 0x4;
+    printf("%s: Patching \"%s\" at %p\n", __FUNCTION__,str,(void*)(xref_stuff));
+    *(uint32_t *) (kbuf + xref_stuff) = 0x52800000; // mov w0, 0x0
+    xref_stuff = xref_stuff + 0x4;
+    printf("%s: Patching \"%s\" at %p\n", __FUNCTION__,str,(void*)(xref_stuff));
+    *(uint32_t *) (kbuf + xref_stuff) = 0xD65F03C0; // ret
+    xref_stuff = xref_stuff + 0x4;
     return 0;
 }
 
