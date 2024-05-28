@@ -2133,7 +2133,7 @@ int main(int argc, char **argv) {
     for(int i=0;i<argc;i++) {
         if(strcmp(argv[i], "-u") == 0) {
             printf("Kernel: Adding seprmvr64 patch...\n");
-            if (strcmp(argv[i+1], "10") == 0 || strcmp(argv[i+1], "11") == 0 || strcmp(argv[i+1], "12") == 0) {
+            if (strcmp(argv[i+1], "10") == 0 || strcmp(argv[i+1], "11") == 0 || strcmp(argv[i+1], "12") == 0 || strcmp(argv[i+1], "13") == 0) {
                 char* oldname = argv[2];
                 const char* str1 = oldname;
                 const char* str2 = ".seprmvr64";
@@ -2305,6 +2305,15 @@ int main(int argc, char **argv) {
                     }
                 }
             } else if (strcmp(argv[i+1], "12") == 0) {
+                void* strings[] = {
+                    "AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)"
+                };
+                for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
+                    if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
+                        printf("[-] Failed to patch %s\n", strings[i]);
+                    }
+                }
+            } else if (strcmp(argv[i+1], "13") == 0) {
                 void* strings[] = {
                     "AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)"
                 };
