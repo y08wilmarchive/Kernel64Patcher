@@ -411,7 +411,7 @@ int seprmvr64(int argc, char *argv[], char *ver)
     if (argc == 4 && !strcmp(argv[3], "--skip-amfi")) {
         printf("[*] Skipping AMFI patch\n");
     } else {
-        patch_amfi();
+        //patch_amfi();
     }
 
     fp = fopen(out, "wb+");
