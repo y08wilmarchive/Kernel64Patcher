@@ -2244,7 +2244,8 @@ int main(int argc, char **argv) {
         printf("\t-b\t\tPatch image4_context_validate failed (iOS 11.0-11.2.6 Only)\n");
         printf("\t-r\t\tPatch image4_context_validate failed (iOS 11.3-13.7 Only)\n");
         printf("\t-w\t\tPatch image4_context_validate failed (iOS 14.0-14.7.1 Only)\n");
-        printf("\t-u\t\tPatch seprmvr64 (iOS 7, 8, 9, 10, 11& 12 Only)\n");
+        printf("\t-u\t\tPatch seprmvr64 (iOS 7, 8, 9, 10, 11, 12, 13& 14 Only)\n");
+        printf("\t-c\t\tPatch %s (iOS 11& 12 Only)\n", "AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)");
         printf("\t-z\t\tPatch _sepTransactResponse (iOS 13 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
@@ -2384,7 +2385,7 @@ int main(int argc, char **argv) {
                 }
             } else if (strcmp(argv[i+1], "12") == 0) {
                 void* strings[] = {
-                    "AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)",
+                    //"AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)",
                     "\"Content Protection: uninitialized cnode %p\"",
                     "cp_vnode_setclass"
                 };
@@ -2415,6 +2416,17 @@ int main(int argc, char **argv) {
                     if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
                         printf("[-] Failed to patch %s\n", strings[i]);
                     }
+                }
+            }
+        }
+        if(strcmp(argv[i], "-c") == 0) {
+            printf("Kernel: Adding %s patch...\n", "AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)");
+            void* strings[] = {
+                "AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)"
+            };
+            for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
+                if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
+                    printf("[-] Failed to patch %s\n", strings[i]);
                 }
             }
         }
