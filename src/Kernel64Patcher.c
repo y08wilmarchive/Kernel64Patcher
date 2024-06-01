@@ -76,44 +76,6 @@ int get_image4_context_validate_patch_ios11(void* kernel_buf,size_t kernel_len) 
     return 0;
 }
 
-// load firmware which are not signed like AOP.img4, Homer.img4, etc. ios 13
-int get_image4_context_validate_patch_ios13(void* kernel_buf,size_t kernel_len) {
-    printf("%s: Entering ...\n",__FUNCTION__);
-    char first_string[45] = "Image4: Encrypted payloads are not supported";
-    void* found = memmem(kernel_buf,kernel_len,first_string,44);
-    if(!found) {
-        printf("%s: Could not find \"Image4: Encrypted payloads are not supported\" string\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"Image4: Encrypted payloads are not supported\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,found));
-    addr_t found_ref = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, found));
-    if(!found_ref) {
-        printf("%s: Could not find \"xref of Image4: Encrypted payloads are not supported\" xref\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"Image4: Encrypted payloads are not supported\" xref at %p\n",__FUNCTION__,(void*)found);
-    printf("%s: Patching \"Image4: Encrypted payloads are not supported\" at %p\n\n", __FUNCTION__,(void*)(found_ref + 0x50));
-    *(uint32_t *) (kernel_buf + found_ref + 0x50) = 0xd503201f;
-    printf("%s: Patching \"Image4: Encrypted payloads are not supported\" at %p\n\n", __FUNCTION__,(void*)(found_ref - 0x50));
-    *(uint32_t *) (kernel_buf + found_ref - 0x50) = 0xd503201f;
-   char second_string[34] = "Image4: Payload hash check failed";
-    void* second_found = memmem(kernel_buf,kernel_len,second_string,33);
-    if(!second_found) {
-        printf("%s: Could not find \"Image4: Payload hash check failed\" string\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"Image4: Payload hash check failed\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,second_found));
-    addr_t second_found_ref = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, second_found));
-    if(!second_found_ref) {
-        printf("%s: Could not find \"xref of Image4: Payload hash check failed\" xref\n",__FUNCTION__);
-        return -1;
-    }
-    printf("%s: Found \"Image4: Payload hash check failed\" xref at %p\n",__FUNCTION__,(void*)second_found_ref);
-    printf("%s: Patching \"Image4: Payload hash check failed\" at %p\n\n", __FUNCTION__,(void*)(second_found_ref - 0x08));
-    *(uint32_t *) (kernel_buf + second_found_ref - 0x08) = 0x17ffff96;
-    return 0;
-}
-
 // load firmware which are not signed like AOP.img4, Homer.img4, etc. ios 10
 int get_image4_context_validate_patch_ios10(void* kernel_buf,size_t kernel_len) {
     printf("%s: Entering ...\n",__FUNCTION__);
@@ -317,6 +279,62 @@ int get_image4_context_validate_patch_ios12(void* kernel_buf,size_t kernel_len) 
         printf("%s: Patching \"Image4: Invalid ecid\" at %p\n", __FUNCTION__,(void*)(found_ref + 0x50));
         *(uint32_t *) (kernel_buf + found_ref + 0x50) = 0xd2800009; // mov x9, 0x0
     }
+    return 0;
+}
+
+// load firmware which are not signed like AOP.img4, Homer.img4, etc. ios 14
+int get_image4_context_validate_patch_ios14(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    char img4_sig_check_string[55] = "Img4DecodePerformTrustEvaluationWithCallbacks: [%d %s]";
+    void* found = memmem(kernel_buf,kernel_len,img4_sig_check_string,54);
+    if(!found) {
+        printf("%s: Could not find \"%s\" string\n",__FUNCTION__,"Img4DecodePerformTrustEvaluationWithCallbacks: [%d %s]");
+        return -1;
+    }
+    printf("%s: Found \"%s\" str loc at %p\n",__FUNCTION__,"Img4DecodePerformTrustEvaluationWithCallbacks: [%d %s]",GET_OFFSET(kernel_len,found));
+    char img4_wrapped_Image4_payload[27] = "trust evaluation succeeded";
+    void* ent_loc = memmem(kernel_buf,kernel_len,img4_wrapped_Image4_payload,26);
+    if(!ent_loc) {
+        printf("%s: Could not find \"trust evaluation succeeded\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"trust evaluation succeeded\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t ent_ref = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
+    if(!ent_ref) {
+        printf("%s: Could not find \"trust evaluation succeeded\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"trust evaluation succeeded\" xref at %p\n",__FUNCTION__,(void*)ent_ref);
+    printf("%s: Patching \"trust evaluation succeeded\" at %p\n", __FUNCTION__,(void*)(ent_ref - 0x20));
+    *(uint32_t *) (kernel_buf + ent_ref - 0x20) = 0xd503201f;
+    return 0;
+}
+
+// tested on an ipad 6 on ios 13.7, this was done to avoid wait like 2 or 10 minutes when it is booting
+int get__sepTransactResponse_patch_ios13(void* kernel_buf, size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    void* ent_loc = memmem(kernel_buf, kernel_len, "_sepTransactResponse", 21);
+    if(!ent_loc) {
+        printf("%s: Could not find \"_sepTransactResponse\" string\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"_sepTransactResponse\" str loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    addr_t ent_ref = xref64(kernel_buf,0,kernel_len,(addr_t)GET_OFFSET(kernel_len, ent_loc));
+    if(!ent_ref) {
+        printf("%s: Could not find \"_sepTransactResponse\" xref\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"_sepTransactResponse\" xref at %p\n",__FUNCTION__,(void*)ent_ref);
+    addr_t beg_func = bof64_patchfinder64(kernel_buf, 0, ent_ref);
+    if(!beg_func) {
+        printf("%s: Could not find \"_sepTransactResponse\" beg_func\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"_sepTransactResponse\" beg_func at %p\n",__FUNCTION__,(void*)beg_func);
+    printf("%s: Patching \"_sepTransactResponse\" at %p\n", __FUNCTION__,(void*)(beg_func));
+    *(uint32_t *)(kernel_buf + beg_func) = 0x52800000;
+    printf("%s: Patching \"_sepTransactResponse\" at %p\n", __FUNCTION__,(void*)(beg_func + 0x4));
+    *(uint32_t *)(kernel_buf + beg_func + 0x4) = 0xD65F03C0;
     return 0;
 }
 
@@ -1043,6 +1061,56 @@ int get_vm_fault_enter_patch_ios13(void* kernel_buf,size_t kernel_len) {
         return -1;
     }
     printf("%s: Found \"vm_fault_enter\" last tbz insn at %p\n", __FUNCTION__,(void*)(tbz));
+    tbz = (addr_t)GET_OFFSET(kernel_len, tbz);
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,(void*)(tbz));
+    printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(tbz));
+    // 0xD503201F is nop
+    *(uint32_t *) (kernel_buf + tbz) = 0xD503201F; // nop
+    return 0;
+}
+
+// iOS 14 arm64
+int get_vm_fault_enter_patch_ios14(void* kernel_buf,size_t kernel_len) {
+    printf("%s: Entering ...\n",__FUNCTION__);
+    // 3f3d0071e9179f1a9f1040f14911891a
+    uint8_t search[] = { 0x3f, 0x3d, 0x00, 0x71, 0xe9, 0x17, 0x9f, 0x1a, 0x9f, 0x10, 0x40, 0xf1, 0x49, 0x11, 0x89, 0x1a };
+    void* ent_loc = memmem(kernel_buf, kernel_len, search, sizeof(search) / sizeof(*search));
+    if (!ent_loc) {
+        printf("%s: Could not find \"vm_fault_enter\" patch\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,GET_OFFSET(kernel_len,ent_loc));
+    printf("%s: Found \"vm_fault_enter\" xref at %p\n", __FUNCTION__,(void*)(ent_loc));
+    addr_t tbz = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, ent_loc, insn_is_tbz);
+    if(!tbz) {
+        printf("%s: Could not find \"vm_fault_enter\" next tbz insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" next tbz insn at %p\n", __FUNCTION__,(void*)(tbz));
+    addr_t b = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, tbz, insn_is_b_unconditional_64);
+    if(!b) {
+        printf("%s: Could not find \"vm_fault_enter\" next b insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" next b insn at %p\n", __FUNCTION__,(void*)(b));
+    tbz = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, b, insn_is_tbz);
+    if(!tbz) {
+        printf("%s: Could not find \"vm_fault_enter\" next tbz insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" next tbz insn at %p\n", __FUNCTION__,(void*)(tbz));
+    b = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, tbz, insn_is_b_unconditional_64);
+    if(!b) {
+        printf("%s: Could not find \"vm_fault_enter\" next b insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" next b insn at %p\n", __FUNCTION__,(void*)(b));
+    tbz = (addr_t)find_next_insn_matching_64(0, kernel_buf, kernel_len, b, insn_is_tbz);
+    if(!tbz) {
+        printf("%s: Could not find \"vm_fault_enter\" next tbz insn\n",__FUNCTION__);
+        return -1;
+    }
+    printf("%s: Found \"vm_fault_enter\" next tbz insn at %p\n", __FUNCTION__,(void*)(tbz));
     tbz = (addr_t)GET_OFFSET(kernel_len, tbz);
     printf("%s: Found \"vm_fault_enter\" patch loc at %p\n",__FUNCTION__,(void*)(tbz));
     printf("%s: Patching \"vm_fault_enter\" at %p\n", __FUNCTION__,(void*)(tbz));
@@ -2133,7 +2201,7 @@ int main(int argc, char **argv) {
     for(int i=0;i<argc;i++) {
         if(strcmp(argv[i], "-u") == 0) {
             printf("Kernel: Adding seprmvr64 patch...\n");
-            if (strcmp(argv[i+1], "10") == 0 || strcmp(argv[i+1], "11") == 0 || strcmp(argv[i+1], "12") == 0 || strcmp(argv[i+1], "13") == 0) {
+            if (strcmp(argv[i+1], "10") == 0 || strcmp(argv[i+1], "11") == 0 || strcmp(argv[i+1], "12") == 0 || strcmp(argv[i+1], "13") == 0 || strcmp(argv[i+1], "14") == 0) {
                 char* oldname = argv[2];
                 const char* str1 = oldname;
                 const char* str2 = ".seprmvr64";
@@ -2160,7 +2228,7 @@ int main(int argc, char **argv) {
         printf("\t-m <ios ver>\tPatch mount_common (iOS 7, 8, 9, 10 Only)\n");
         printf("\t-e <ios ver>\tPatch vm_map_enter (iOS 7, 8, 9, 10& 11 Only)\n");
         printf("\t-l <ios ver>\tPatch vm_map_protect (iOS 8, 9, 10& 11 Only)\n");
-        printf("\t-f <ios ver>\tPatch vm_fault_enter (iOS 7, 8, 8.4, 9, 10, 11, 12& 13 Only)\n");
+        printf("\t-f <ios ver>\tPatch vm_fault_enter (iOS 7, 8, 8.4, 9, 10, 11, 12, 13& 14 Only)\n");
         printf("\t-s <ios ver>\tPatch PE_i_can_has_debugger (iOS 8& 9 Only)\n");
         printf("\t-y\t\tPatch CP: major vers not set in mount! (iOS 9 Only)\n");
         printf("\t-a\t\tPatch map_IO (iOS 8, 9, 10& 11 Only)\n");
@@ -2175,7 +2243,9 @@ int main(int argc, char **argv) {
         printf("\t-q\t\tPatch image4_context_validate failed (iOS 10 Only)\n");
         printf("\t-b\t\tPatch image4_context_validate failed (iOS 11.0-11.2.6 Only)\n");
         printf("\t-r\t\tPatch image4_context_validate failed (iOS 11.3-13.7 Only)\n");
+        printf("\t-w\t\tPatch image4_context_validate failed (iOS 14.0-14.7.1 Only)\n");
         printf("\t-u\t\tPatch seprmvr64 (iOS 7, 8, 9, 10, 11& 12 Only)\n");
+        printf("\t-z\t\tPatch _sepTransactResponse (iOS 13 Only)\n");
         printf("\t-n\t\tPatch NoMoreSIGABRT\n");
         printf("\t-o\t\tPatch undo NoMoreSIGABRT\n");
 
@@ -2257,6 +2327,8 @@ int main(int argc, char **argv) {
                     //"AppleKeyStore starting (BUILT: %s %s)",
                     //"AppleKeyStore:Sending category unlock status with %d",
                     //"AppleKeyStore:Sending lock change %d"
+                    "\"Content Protection: uninitialized cnode %p\"",
+                    "cp_vnode_setclass"
                 };
                 for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
                     if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
@@ -2279,6 +2351,8 @@ int main(int argc, char **argv) {
                     //"AppleKeyStore starting (BUILT: %s %s)",
                     //"AppleKeyStore:Sending category unlock status with %d",
                     //"AppleKeyStore:Sending lock change %d"
+                    "\"Content Protection: uninitialized cnode %p\"",
+                    "cp_vnode_setclass"
                 };
                 for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
                     if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
@@ -2288,7 +2362,9 @@ int main(int argc, char **argv) {
             } else if (strcmp(argv[i+1], "10") == 0) {
                 void* strings[] = {
                     "\"SEP Panic\"",
-                    "AppleKeyStore: operation failed (pid: %d sel: %d ret: %x)"
+                    "AppleKeyStore: operation failed (pid: %d sel: %d ret: %x)",
+                    "\"Content Protection: uninitialized cnode %p\"",
+                    "cp_vnode_setclass"
                 };
                 for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
                     if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
@@ -2297,7 +2373,9 @@ int main(int argc, char **argv) {
                 }
             } else if (strcmp(argv[i+1], "11") == 0) {
                 void* strings[] = {
-                    "AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)"
+                    //"AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)",
+                    "\"Content Protection: uninitialized cnode %p\"",
+                    "cp_vnode_setclass"
                 };
                 for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
                     if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
@@ -2306,7 +2384,9 @@ int main(int argc, char **argv) {
                 }
             } else if (strcmp(argv[i+1], "12") == 0) {
                 void* strings[] = {
-                    "AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)"
+                    "AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)",
+                    "\"Content Protection: uninitialized cnode %p\"",
+                    "cp_vnode_setclass"
                 };
                 for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
                     if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
@@ -2315,7 +2395,21 @@ int main(int argc, char **argv) {
                 }
             } else if (strcmp(argv[i+1], "13") == 0) {
                 void* strings[] = {
-                    "AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)"
+                    "AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)",
+                    "\"Content Protection: uninitialized cnode %p\"",
+                    "cp_vnode_setclass"
+                };
+                for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
+                    if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
+                        printf("[-] Failed to patch %s\n", strings[i]);
+                    }
+                }
+            } else if (strcmp(argv[i+1], "14") == 0) {
+                void* strings[] = {
+                    "%s%s:%s%s%s%s%u:%s%u:%s operation %s(sel: %d ret: %x%s)%s",
+                    "%s%s:%s%s%s%s%u:%s%u:%s sks timeout strike %d%s",
+                    "\"Content Protection: uninitialized cnode %p\"",
+                    "cp_vnode_setclass"
                 };
                 for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
                     if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
@@ -2323,6 +2417,10 @@ int main(int argc, char **argv) {
                     }
                 }
             }
+        }
+        if(strcmp(argv[i], "-z") == 0) {
+            printf("Kernel: Adding _sepTransactResponse patch...\n");
+            get__sepTransactResponse_patch_ios13(kernel_buf,kernel_len);
         }
         if(strcmp(argv[i], "-e") == 0) {
             printf("Kernel: Adding vm_map_enter patch...\n");
@@ -2368,6 +2466,8 @@ int main(int argc, char **argv) {
                 get_vm_fault_enter_patch_ios12(kernel_buf,kernel_len);
             } else if (strcmp(argv[i+1], "13") == 0) {
                 get_vm_fault_enter_patch_ios13(kernel_buf,kernel_len);
+            } else if (strcmp(argv[i+1], "14") == 0) {
+                get_vm_fault_enter_patch_ios14(kernel_buf,kernel_len);
             }
         }
         if(strcmp(argv[i], "-m") == 0) {
@@ -2451,6 +2551,10 @@ int main(int argc, char **argv) {
         if(strcmp(argv[i], "-r") == 0) {
             printf("Kernel: Adding image4_context_validate failed patch...\n");
             get_image4_context_validate_patch_ios12(kernel_buf,kernel_len);
+        }
+        if(strcmp(argv[i], "-w") == 0) {
+            printf("Kernel: Adding image4_context_validate failed patch...\n");
+            get_image4_context_validate_patch_ios14(kernel_buf,kernel_len);
         }
     }
     
