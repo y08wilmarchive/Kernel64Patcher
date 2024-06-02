@@ -2492,6 +2492,10 @@ int main(int argc, char **argv) {
                 get_mount_common_patch_ios9(kernel_buf,kernel_len);
             } else if (strcmp(argv[i+1], "10") == 0) {
                 get_mount_common_patch_ios10(kernel_buf,kernel_len);
+            } else if (strcmp(argv[i+1], "11") == 0) {
+                get_mount_common_patch_ios10(kernel_buf,kernel_len);
+            } else if (strcmp(argv[i+1], "12") == 0) {
+                get_mount_common_patch_ios10(kernel_buf,kernel_len);
             }
         }
         if(strcmp(argv[i], "-y") == 0) {
