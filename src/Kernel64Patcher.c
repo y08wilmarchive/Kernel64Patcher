@@ -2375,8 +2375,8 @@ int main(int argc, char **argv) {
             } else if (strcmp(argv[i+1], "11") == 0) {
                 void* strings[] = {
                     //"AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)",
-                    "\"Content Protection: uninitialized cnode %p\"",
-                    "cp_vnode_setclass"
+                    //"\"Content Protection: uninitialized cnode %p\"",
+                    //"cp_vnode_setclass"
                 };
                 for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
                     if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
@@ -2386,8 +2386,8 @@ int main(int argc, char **argv) {
             } else if (strcmp(argv[i+1], "12") == 0) {
                 void* strings[] = {
                     //"AppleKeyStore: operation %s(pid: %d sel: %d ret: %x '%d'%s)",
-                    "\"Content Protection: uninitialized cnode %p\"",
-                    "cp_vnode_setclass"
+                    //"\"Content Protection: uninitialized cnode %p\"",
+                    //"cp_vnode_setclass"
                 };
                 for(int i = 0; i < sizeof(strings)/sizeof(strings[0]); i++) {
                     if(findandpatch(kernel_buf, kernel_len, strings[i]) != 0) {
